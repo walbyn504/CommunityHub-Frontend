@@ -6,7 +6,7 @@ export type UserRole = 'ADMIN' | 'ORGANIZER' | 'USER'
 
 /**
  * Representa al usuario autenticado tal como lo devuelve la API
- * (GET /api/auth/me, POST /api/auth/login).
+ * (GET /api/auth/me). Coincide exactamente con el authController real.
  */
 export interface AuthUser {
   id: string
@@ -14,33 +14,35 @@ export interface AuthUser {
   lastName: string
   email: string
   role: UserRole
-  avatar?: string | null
-  createdAt: string
+  profileImage?: string | null
 }
 
-export interface LoginPayload {
+/** Datos que el formulario de login envía al backend (no confundir con el "payload" del JWT). */
+export interface LoginCredentials {
   email: string
   password: string
 }
 
-export interface RegisterPayload {
+/** Datos que el formulario de registro envía al backend. */
+export interface RegisterData {
   firstName: string
   lastName: string
   email: string
   password: string
-  avatar?: string | null
+  profileImage?: string | null
 }
 
-/** Envoltorio estándar de respuestas exitosas de la API. */
-export interface ApiSuccessResponse<T> {
-  success: true
-  message?: string
-  data: T
+/**
+ * Respuesta real de POST /api/auth/login: el usuario más el token JWT,
+ * todo en el mismo nivel (sin envoltorio { success, data }).
+ */
+export interface LoginResponse extends AuthUser {
+  token: string
 }
 
-/** Envoltorio estándar de respuestas de error de la API. */
+/** Formato de error que usa el backend (a veces con "success", a veces sin él). */
 export interface ApiErrorResponse {
-  success: false
+  success?: false
   message: string
   errors?: Record<string, string>
 }
