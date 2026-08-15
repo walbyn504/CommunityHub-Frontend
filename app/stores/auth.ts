@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { AuthUser, LoginPayload } from '~/types/auth'
+import type { AuthUser, LoginPayload, RegisterPayload } from '~/types/auth'
 
 interface AuthState {
   user: AuthUser | null
@@ -34,6 +34,27 @@ export const useAuthStore = defineStore('auth', {
       this.isLoading = true
       try {
         const response = await api<{ success: true; data: { user: AuthUser } }>('/auth/login', {
+          method: 'POST',
+          body: payload
+        })
+        this.user = response.data.user
+        this.isInitialized = true
+        return this.user
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Registra un nuevo usuario contra POST /api/auth/register.
+     * Igual que en login, el backend deja al usuario con la sesión ya
+     * iniciada (cookie httpOnly), para no pedirle loguearse dos veces.
+     */
+    async register(payload: RegisterPayload) {
+      const api = useApi()
+      this.isLoading = true
+      try {
+        const response = await api<{ success: true; data: { user: AuthUser } }>('/auth/register', {
           method: 'POST',
           body: payload
         })
