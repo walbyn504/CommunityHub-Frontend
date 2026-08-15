@@ -66,7 +66,7 @@ function validate(): boolean {
   if (!form.password) {
     fieldErrors.password = 'La contraseña es obligatoria.'
   } else if (!isValidPassword(form.password)) {
-    fieldErrors.password = 'Mínimo 8 caracteres, con al menos una letra y un número.'
+    fieldErrors.password = 'Mínimo 8 caracteres, con mayúscula, minúscula, número y carácter especial (@$!%*?&.#_-).'
   }
 
   if (form.confirmPassword !== form.password) {
@@ -77,6 +77,10 @@ function validate(): boolean {
 }
 
 async function handleSubmit() {
+  // Evita envíos duplicados si el usuario hace doble clic o presiona
+  // Enter varias veces antes de que se deshabilite el botón visualmente.
+  if (isSubmitting.value) return
+
   serverError.value = ''
   if (!validate()) return
 
@@ -87,7 +91,7 @@ async function handleSubmit() {
       lastName: form.lastName.trim(),
       email: form.email.trim(),
       password: form.password,
-      avatar: avatarBase64.value
+      profileImage: avatarBase64.value
     })
     await navigateTo('/')
   } catch (error) {
@@ -193,11 +197,14 @@ const inputClasses = 'w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-
             v-model="form.password"
             type="password"
             autocomplete="new-password"
-            placeholder="Mínimo 8 caracteres"
+            placeholder="••••••••"
             :disabled="isSubmitting"
             :class="[inputClasses, fieldErrors.password ? 'border-red-500' : 'border-slate-300 focus:border-brand-accent']"
           >
           <span v-if="fieldErrors.password" class="text-xs text-red-500">{{ fieldErrors.password }}</span>
+          <span v-else class="text-xs text-slate-400">
+            Mínimo 8 caracteres: mayúscula, minúscula, número y carácter especial (@$!%*?&amp;.#_-)
+          </span>
         </div>
 
         <div class="flex flex-col gap-1.5">
