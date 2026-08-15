@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { AuthUser, LoginPayload, RegisterPayload } from '~/types/auth'
+import type { AuthUser, LoginCredentials, LoginResponse, RegisterData } from '~/types/auth'
 
 interface AuthState {
   user: AuthUser | null
@@ -26,19 +26,22 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     /**
      * Inicia sesión contra POST /api/auth/login.
-     * El backend responde con { success: true, data: { user } } y setea
-     * la cookie httpOnly del JWT; el frontend nunca ve el token directamente.
+     * El backend responde { token, id, firstName, lastName, email, role } en
+     * un solo nivel (sin envoltorio). Guardamos el token en la cookie (para
+     * que sobreviva a un refresh) y usamos ESE MISMO token directamente para
+     * la llamada a /auth/me que sigue, en vez de releerlo de la cookie
+     * (evita una condición de carrera con la sincronización de la cookie).
      */
-    async login(payload: LoginPayload) {
-      const api = useApi()
+    async login(credentials: LoginCredentials) {
+      const token = useAuthToken()
       this.isLoading = true
       try {
-        const response = await api<{ success: true; data: { user: AuthUser } }>('/auth/login', {
+        const response = await useApi()<LoginResponse>('/auth/login', {
           method: 'POST',
-          body: payload
+          body: credentials
         })
-        this.user = response.data.user
-        this.isInitialized = true
+        token.value = response.token
+        await this.fetchMe(response.token)
         return this.user
       } finally {
         this.isLoading = false
@@ -47,54 +50,63 @@ export const useAuthStore = defineStore('auth', {
 
     /**
      * Registra un nuevo usuario contra POST /api/auth/register.
-     * Igual que en login, el backend deja al usuario con la sesión ya
-     * iniciada (cookie httpOnly), para no pedirle loguearse dos veces.
+     * El backend NO devuelve token en el registro (solo crea la cuenta), así
+     * que encadenamos un login automático con las mismas credenciales para
+     * no obligar al usuario a escribirlas dos veces.
      */
-    async register(payload: RegisterPayload) {
-      const api = useApi()
+    async register(newUser: RegisterData) {
       this.isLoading = true
       try {
-        const response = await api<{ success: true; data: { user: AuthUser } }>('/auth/register', {
+        await useApi()('/auth/register', {
           method: 'POST',
-          body: payload
+          body: newUser
         })
-        this.user = response.data.user
-        this.isInitialized = true
-        return this.user
+        return await this.login({ email: newUser.email, password: newUser.password })
       } finally {
         this.isLoading = false
       }
     },
 
     /**
-     * Consulta GET /api/auth/me para saber si la cookie de sesión sigue siendo
-     * válida y quién es el usuario actual. Se usa al cargar la app y en el
-     * middleware de rutas protegidas.
+     * Consulta GET /api/auth/me (requiere el header Authorization) para saber
+     * si el token guardado sigue siendo válido y traer el perfil completo.
+     * Se usa al cargar la app, en el middleware de rutas protegidas, y justo
+     * después de login() (con el token recién recibido, ver arriba).
      */
-    async fetchMe() {
-      const api = useApi()
+    async fetchMe(tokenOverride?: string) {
+      const token = useAuthToken()
+      const activeToken = tokenOverride ?? token.value
+
+      if (!activeToken) {
+        this.user = null
+        this.isInitialized = true
+        return
+      }
+
       try {
-        const response = await api<{ success: true; data: { user: AuthUser } }>('/auth/me')
-        this.user = response.data.user
+        this.user = await useApi(activeToken)<AuthUser>('/auth/me')
       } catch {
         this.user = null
+        token.value = null
       } finally {
         this.isInitialized = true
       }
     },
 
     /**
-     * Cierra sesión contra POST /api/auth/logout (el backend limpia la cookie httpOnly).
-     * Aunque el backend no responda, igual se limpia el estado local y se redirige.
+     * Cierra sesión contra POST /api/auth/logout. Como el JWT es sin estado
+     * (el backend no lo invalida), lo importante es borrar el token guardado
+     * localmente; la llamada al backend es solo por completitud del contrato.
      */
     async logout() {
-      const api = useApi()
+      const token = useAuthToken()
       try {
-        await api('/auth/logout', { method: 'POST' })
+        await useApi()('/auth/logout', { method: 'POST' })
       } catch {
         // Si el backend no responde, cerramos sesión localmente de todas formas.
       } finally {
         this.user = null
+        token.value = null
         await navigateTo('/login')
       }
     }
