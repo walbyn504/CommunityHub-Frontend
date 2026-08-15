@@ -3,6 +3,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  // El backend (Express, repo aparte) corre en el puerto 3000.
+  // El frontend usa el 3001 en desarrollo para no chocar con él.
+  devServer: {
+    port: 3001
+  },
+
   // Módulos utilizados por CommunityHub
   modules: ['@pinia/nuxt', '@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
 
@@ -71,7 +77,7 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           // Cachea respuestas de la API para consultar actividades vistas sin conexión
-          urlPattern: /^http:\/\/localhost:5000\/api\/.*/i,
+          urlPattern: /^http:\/\/localhost:3000\/api\/.*/i,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'communityhub-api-cache',
