@@ -4,7 +4,22 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   // Módulos utilizados por CommunityHub
-  modules: ['@pinia/nuxt', '@vite-pwa/nuxt'],
+  modules: ['@pinia/nuxt', '@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
+
+  // Hoja de estilos global (reset + tipografía base)
+  css: ['~/assets/css/main.css'],
+
+  // Favicon del sitio (mismo ícono usado en la PWA).
+  // El "?v=2" al final es cache-busting: obliga a Chrome a tratarlo como un
+  // archivo nuevo en vez de usar el favicon viejo que dejó cacheado.
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/icons/icon-192x192.png?v=2' },
+        { rel: 'apple-touch-icon', href: '/icons/icon-192x192.png?v=2' }
+      ]
+    }
+  },
 
   // Variables de entorno públicas expuestas al cliente.
   // Nuxt sobreescribe automáticamente estos valores con las variables
@@ -45,8 +60,14 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
-      navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,json,woff2}'],
+      // @vite-pwa/nuxt trae "navigateFallback: index.html" como valor por
+      // defecto interno; hay que sobreescribirlo EXPLÍCITAMENTE con undefined
+      // (quitar la línea no alcanza). La app es SSR: no existe un "/" estático
+      // que se pueda precachear como shell offline. La funcionalidad offline
+      // real se implementa cacheando las respuestas de la API (ver
+      // runtimeCaching abajo) cuando construyamos las páginas de actividades.
+      navigateFallback: undefined,
+      globPatterns: ['**/*.{js,css,png,svg,ico,json,woff2}'],
       runtimeCaching: [
         {
           // Cachea respuestas de la API para consultar actividades vistas sin conexión
@@ -69,10 +90,13 @@ export default defineNuxtConfig({
       installPrompt: true,
       periodicSyncForUpdates: 3600
     },
+    // El Service Worker de prueba en modo desarrollo (devOptions.enabled) es
+    // experimental y genera errores inestables al limpiar .nuxt. La PWA real
+    // (manifest + Service Worker + instalación) ya se verificó funcionando
+    // correctamente con `npm run build` + `npm run preview`, así que se
+    // desactiva aquí para tener un entorno de desarrollo estable.
     devOptions: {
-      enabled: true,
-      type: 'module',
-      suppressWarnings: true
+      enabled: false
     }
   }
 })
