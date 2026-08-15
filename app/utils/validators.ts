@@ -4,10 +4,17 @@ export function isValidEmail(value: string): boolean {
 }
 
 /**
- * Contraseña mínimamente segura para el registro: al menos 8 caracteres,
- * con una letra y un número. La validación completa y definitiva siempre
- * la hace el backend antes de hashear con bcrypt.
+ * Espejo exacto de validatePassword() en authController.js del backend:
+ * mínimo 8 caracteres, con minúscula, mayúscula, número y carácter especial
+ * (@$!%*?&.#_-). Debe coincidir siempre con el backend para que el frontend
+ * nunca acepte algo que el backend vaya a rechazar después.
  */
 export function isValidPassword(value: string): boolean {
-  return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(value)
+  const hasLower = /[a-z]/.test(value)
+  const hasUpper = /[A-Z]/.test(value)
+  const hasNumber = /\d/.test(value)
+  const hasSpecial = /[@$!%*?&.#_-]/.test(value)
+  const minLength = value.length >= 8
+
+  return hasLower && hasUpper && hasNumber && hasSpecial && minLength
 }
