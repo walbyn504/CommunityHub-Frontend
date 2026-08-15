@@ -2,6 +2,7 @@
   <div>
     <NuxtRouteAnnouncer />
     <NuxtPwaManifest />
-    <NuxtWelcome />
+    <NuxtLoadingIndicator />
+    <NuxtPage />
   </div>
 </template>
