@@ -6,6 +6,7 @@ const authStore = useAuthStore()
 const { list: listCategories } = useCategories()
 const { list: listEvents } = useEvents()
 const { register, cancel, listMine } = useRegistrations()
+const { add: addFavorite, remove: removeFavorite, listMine: listFavorites } = useFavorites()
 
 const form = reactive({
   search: '',
@@ -38,10 +39,19 @@ const { data: registrations, refresh: refreshRegistrations } = await useAsyncDat
   { server: false, watch: [() => authStore.isAuthenticated] }
 )
 
+const { data: favorites, refresh: refreshFavorites } = await useAsyncData(
+  'events-browser-favorites',
+  () => authStore.isAuthenticated ? listFavorites() : Promise.resolve([]),
+  { server: false, watch: [() => authStore.isAuthenticated] }
+)
+
 const selectedEvent = ref<EventItem | null>(null)
 const isProcessingRegistration = ref(false)
 const modalMessage = ref('')
 const modalError = ref('')
+const favoriteMessage = ref('')
+const favoriteError = ref('')
+const processingFavoriteId = ref<string | null>(null)
 
 function registrationFor(eventId: string) {
   return registrations.value?.find((registration) => {
@@ -50,6 +60,44 @@ function registrationFor(eventId: string) {
       : registration.event?._id
     return registeredEventId === eventId && registration.status === 'CONFIRMED'
   })
+}
+
+function favoriteFor(eventId: string) {
+  return favorites.value?.find((favorite) => {
+    const favoriteEventId = typeof favorite.event === 'string'
+      ? favorite.event
+      : favorite.event?._id
+    return favoriteEventId === eventId
+  })
+}
+
+async function toggleFavorite(event: EventItem) {
+  if (!authStore.isAuthenticated) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  favoriteMessage.value = ''
+  favoriteError.value = ''
+  processingFavoriteId.value = event._id
+  const isFavorite = !!favoriteFor(event._id)
+
+  try {
+    if (isFavorite) {
+      await removeFavorite(event._id)
+      favoriteMessage.value = `“${event.title}” se eliminó de tus favoritos.`
+    } else {
+      await addFavorite(event._id)
+      favoriteMessage.value = `“${event.title}” se agregó a tus favoritos.`
+    }
+    await refreshFavorites()
+  } catch (err) {
+    favoriteError.value = err instanceof ApiError
+      ? err.message
+      : 'No se pudo actualizar la actividad favorita.'
+  } finally {
+    processingFavoriteId.value = null
+  }
 }
 
 function openRegistrationModal(event: EventItem) {
@@ -115,6 +163,9 @@ function clearFilters() {
   <main class="sketch-page mx-auto max-w-6xl px-4 py-10">
     <h1 class="text-2xl font-bold text-slate-900">Actividades</h1>
     <p class="mt-1 text-sm text-slate-500">Explora y encuentra actividades de tu comunidad.</p>
+
+    <div v-if="favoriteMessage" class="sketch-success mt-5" role="status">{{ favoriteMessage }}</div>
+    <div v-if="favoriteError" class="sketch-form-error mt-5" role="alert">{{ favoriteError }}</div>
 
     <form
       class="mt-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-5"
@@ -189,7 +240,7 @@ function clearFilters() {
       <article
         v-for="event in events"
         :key="event._id"
-        class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-transform hover:-translate-y-1"
+        class="relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-transform hover:-translate-y-1"
       >
         <NuxtLink :to="`/events/${event._id}`" class="block">
           <div class="relative flex h-32 items-center justify-center bg-slate-100">
@@ -208,6 +259,18 @@ function clearFilters() {
             </span>
           </div>
         </NuxtLink>
+
+        <button
+          type="button"
+          :disabled="processingFavoriteId === event._id"
+          class="absolute left-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-950 bg-white text-xl font-black shadow-[2px_2px_0_#0f172a] transition hover:scale-105 disabled:opacity-60"
+          :class="favoriteFor(event._id) ? 'text-rose-600' : 'text-slate-500'"
+          :aria-label="favoriteFor(event._id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+          :title="favoriteFor(event._id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+          @click="toggleFavorite(event)"
+        >
+          {{ favoriteFor(event._id) ? '♥' : '♡' }}
+        </button>
 
         <div class="flex flex-1 flex-col p-3.5">
           <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] gap-4">
