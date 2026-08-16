@@ -3,6 +3,7 @@ interface NavLink {
   label: string
   to: string
   disabled?: boolean
+  badge?: number
 }
 
 const authStore = useAuthStore()
@@ -10,6 +11,12 @@ const mobileOpen = ref(false)
 const userMenuOpen = ref(false)
 
 const isOrganizerOrAdmin = computed(() => authStore.isOrganizer || authStore.isAdmin)
+const { getUnreadCount } = useNotifications()
+const { data: notificationSummary } = useAsyncData(
+  'notification-unread-count',
+  () => authStore.isAuthenticated ? getUnreadCount() : Promise.resolve({ count: 0 }),
+  { server: false, watch: [() => authStore.isAuthenticated] }
+)
 
 // Enlaces principales, siempre sueltos en la barra (no van dentro del menú).
 const primaryLinks = computed<NavLink[]>(() => [
@@ -19,13 +26,13 @@ const primaryLinks = computed<NavLink[]>(() => [
 
 // Páginas del enunciado que aún no están construidas: se muestran
 // deshabilitadas ("Próximamente") en vez de omitirlas o dejarlas rotas.
-const accountLinks: NavLink[] = [
+const accountLinks = computed<NavLink[]>(() => [
   { label: 'Mi perfil', to: '/profile' },
   { label: 'Dashboard', to: '/dashboard', disabled: true },
   { label: 'Mis inscripciones', to: '/my-registrations' },
   { label: 'Favoritos', to: '/favorites' },
-  { label: 'Notificaciones', to: '/notifications', disabled: true }
-]
+  { label: 'Notificaciones', to: '/notifications', badge: notificationSummary.value?.count ?? 0 }
+])
 
 const adminLinks = computed<NavLink[]>(() =>
   authStore.isAdmin
@@ -121,6 +128,9 @@ async function handleLogout() {
                   >
                     <span aria-hidden="true" class="text-sky-500 transition-transform group-hover:rotate-45">✦</span>
                     {{ link.label }}
+                    <span v-if="link.badge" class="ml-auto min-w-5 bg-rose-500 px-1.5 py-0.5 text-center text-[10px] font-black text-white">
+                      {{ link.badge > 99 ? '99+' : link.badge }}
+                    </span>
                   </NuxtLink>
                   <span v-else class="flex cursor-not-allowed items-center justify-between px-2 py-2 text-sm text-slate-300">
                     {{ link.label }}
@@ -215,6 +225,9 @@ async function handleLogout() {
               @click="closeMenus"
             >
               {{ link.label }}
+              <span v-if="link.badge" class="ml-2 bg-rose-500 px-1.5 py-0.5 text-[10px] font-black text-white">
+                {{ link.badge > 99 ? '99+' : link.badge }}
+              </span>
             </NuxtLink>
             <span v-else class="block rounded-lg px-3 py-2 text-sm text-slate-300">
               {{ link.label }} <span class="text-xs">(Próximamente)</span>
