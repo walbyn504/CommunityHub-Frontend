@@ -169,12 +169,8 @@ function validate(): boolean {
   if (!form.category) fieldErrors.category = 'Selecciona una categoría.'
   if (!form.date) {
     fieldErrors.date = 'La fecha es obligatoria.'
-  } else {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (new Date(form.date) < today) {
-      fieldErrors.date = 'No se permiten actividades con fecha pasada.'
-    }
+  } else if (isEventDateBeforeToday(form.date)) {
+    fieldErrors.date = 'No se permiten actividades con fecha pasada.'
   }
   if (!form.time.trim()) fieldErrors.time = 'La hora es obligatoria.'
   if (!form.location.trim()) fieldErrors.location = 'La ubicación es obligatoria.'
@@ -485,7 +481,7 @@ const statusClasses: Record<string, string> = {
             </span>
           </div>
           <p class="mt-1 text-xs text-slate-500">
-            {{ event.category.name }} · {{ new Date(event.date).toLocaleDateString('es-ES') }} · {{ event.time }}
+            {{ event.category.name }} · {{ formatEventDate(event.date) }} · {{ event.time }}
             · {{ event.availableSpots }}/{{ event.maxCapacity }} cupos
             <template v-if="scope === 'all'">
               · Organizador: {{ event.organizer.firstName }} {{ event.organizer.lastName }}
