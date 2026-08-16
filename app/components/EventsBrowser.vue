@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import type { EventItem } from '~/types/event'
+
+const route = useRoute()
+const authStore = useAuthStore()
 const { list: listCategories } = useCategories()
 const { list: listEvents } = useEvents()
+const { register, cancel, listMine } = useRegistrations()
 
 const form = reactive({
   search: '',
@@ -27,6 +32,70 @@ const { data: events, pending, error, refresh } = await useAsyncData(
   { watch: [appliedFilters] }
 )
 
+const { data: registrations, refresh: refreshRegistrations } = await useAsyncData(
+  'events-browser-registrations',
+  () => authStore.isAuthenticated ? listMine() : Promise.resolve([]),
+  { server: false, watch: [() => authStore.isAuthenticated] }
+)
+
+const selectedEvent = ref<EventItem | null>(null)
+const isProcessingRegistration = ref(false)
+const modalMessage = ref('')
+const modalError = ref('')
+
+function registrationFor(eventId: string) {
+  return registrations.value?.find((registration) => {
+    const registeredEventId = typeof registration.event === 'string'
+      ? registration.event
+      : registration.event?._id
+    return registeredEventId === eventId && registration.status === 'CONFIRMED'
+  })
+}
+
+function openRegistrationModal(event: EventItem) {
+  selectedEvent.value = event
+  modalMessage.value = ''
+  modalError.value = ''
+}
+
+function closeRegistrationModal() {
+  if (isProcessingRegistration.value) return
+  selectedEvent.value = null
+  modalMessage.value = ''
+  modalError.value = ''
+}
+
+async function confirmRegistrationAction() {
+  if (!selectedEvent.value) return
+
+  if (!authStore.isAuthenticated) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  modalMessage.value = ''
+  modalError.value = ''
+  isProcessingRegistration.value = true
+  const isRegistered = !!registrationFor(selectedEvent.value._id)
+
+  try {
+    if (isRegistered) {
+      await cancel(selectedEvent.value._id)
+      modalMessage.value = 'Tu inscripción fue cancelada correctamente.'
+    } else {
+      await register(selectedEvent.value._id)
+      modalMessage.value = 'Te inscribiste correctamente en esta actividad.'
+    }
+    await Promise.all([refreshRegistrations(), refresh()])
+  } catch (err) {
+    modalError.value = err instanceof ApiError
+      ? err.message
+      : isRegistered ? 'No se pudo cancelar la inscripción.' : 'No se pudo completar la inscripción.'
+  } finally {
+    isProcessingRegistration.value = false
+  }
+}
+
 function applyFilters() {
   appliedFilters.value = { ...form }
 }
@@ -40,13 +109,6 @@ function clearFilters() {
   applyFilters()
 }
 
-function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-}
 </script>
 
 <template>
@@ -124,38 +186,129 @@ function formatDate(isoDate: string) {
     </div>
 
     <div v-else class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <NuxtLink
+      <article
         v-for="event in events"
         :key="event._id"
-        :to="`/events/${event._id}`"
-        class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow hover:shadow-md"
+        class="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-transform hover:-translate-y-1"
       >
-        <div class="flex h-36 items-center justify-center bg-slate-100">
-          <img
-            v-if="event.image"
-            :src="event.image"
-            :alt="event.title"
-            class="h-full w-full object-cover"
-          >
-          <span v-else class="text-sm text-slate-400">Sin imagen</span>
-        </div>
-
-        <div class="flex flex-1 flex-col gap-2 p-4">
-          <span class="w-fit rounded-full bg-brand-accent/10 px-2 py-0.5 text-xs font-semibold text-sky-700">
-            {{ event.category.name }}
-          </span>
-          <h2 class="font-semibold text-slate-900">{{ event.title }}</h2>
-          <p class="line-clamp-2 text-sm text-slate-500">{{ event.description }}</p>
-
-          <div class="mt-auto flex flex-col gap-1 pt-2 text-xs text-slate-500">
-            <span>📅 {{ formatDate(event.date) }} · {{ event.time }}</span>
-            <span>📍 {{ event.location }}</span>
-            <span :class="event.availableSpots > 0 ? 'text-emerald-600' : 'text-red-500'">
-              {{ event.availableSpots > 0 ? `${event.availableSpots} cupos disponibles` : 'Sin cupos disponibles' }}
+        <NuxtLink :to="`/events/${event._id}`" class="block">
+          <div class="relative flex h-32 items-center justify-center bg-slate-100">
+            <img
+              v-if="event.image"
+              :src="event.image"
+              :alt="event.title"
+              class="h-full w-full object-cover"
+            >
+            <span v-else class="text-sm text-slate-400">Sin imagen</span>
+            <span
+              v-if="hasEventPassed(event.date, event.time)"
+              class="absolute right-2 top-2 -rotate-2 border-2 border-slate-950 bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-600"
+            >
+              Finalizada por fecha
             </span>
           </div>
+        </NuxtLink>
+
+        <div class="flex flex-1 flex-col p-3.5">
+          <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+            <div class="min-w-0">
+              <span class="inline-block rounded-full bg-brand-accent/10 px-2 py-0.5 text-[11px] font-semibold text-sky-700">
+                {{ event.category.name }}
+              </span>
+              <NuxtLink :to="`/events/${event._id}`" class="mt-2 block font-semibold leading-tight text-slate-900 hover:text-sky-700">
+                <h2>{{ event.title }}</h2>
+              </NuxtLink>
+              <p class="mt-1.5 min-h-10 line-clamp-2 text-xs leading-5 text-slate-500">{{ event.description }}</p>
+            </div>
+
+            <div class="flex min-w-[8.5rem] flex-col gap-1.5 border-l-2 border-dashed border-slate-200 pl-3 text-[11px] leading-4 text-slate-500">
+              <span>📅 {{ formatEventDate(event.date) }} · {{ event.time }}</span>
+              <span>📍 {{ event.location }}</span>
+              <span :class="event.availableSpots > 0 && !hasEventPassed(event.date, event.time) ? 'text-emerald-600' : 'text-red-500'">
+                {{ hasEventPassed(event.date, event.time)
+                  ? 'La actividad ya finalizó'
+                  : event.availableSpots > 0
+                    ? `${event.availableSpots} cupos disponibles`
+                    : 'Sin cupos disponibles' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-auto flex items-center gap-2 border-t-2 border-dashed border-slate-200 pt-2.5">
+            <NuxtLink :to="`/events/${event._id}`" class="text-xs font-black text-sky-700 hover:underline">
+              Ver detalles
+            </NuxtLink>
+            <button
+              type="button"
+              :disabled="hasEventPassed(event.date, event.time) || (!registrationFor(event._id) && event.availableSpots <= 0)"
+              class="ml-auto border-2 px-3 py-1.5 text-xs font-black shadow-[3px_3px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
+              :class="registrationFor(event._id)
+                ? 'border-red-700 bg-red-50 text-red-700'
+                : 'border-slate-950 bg-amber-300 text-slate-950'"
+              @click="openRegistrationModal(event)"
+            >
+              {{ hasEventPassed(event.date, event.time)
+                ? 'Actividad finalizada'
+                : registrationFor(event._id)
+                  ? 'Cancelar inscripción'
+                  : 'Inscribirme' }}
+            </button>
+          </div>
         </div>
-      </NuxtLink>
+      </article>
     </div>
+
+    <Teleport to="body">
+      <div v-if="selectedEvent" class="sketch-modal" @click.self="closeRegistrationModal">
+        <div class="sketch-modal-card max-w-md">
+          <div class="flex items-start justify-between border-b-2 border-dashed border-slate-300 pb-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-sky-700">
+                {{ registrationFor(selectedEvent._id) ? 'Cancelar cupo' : 'Confirmar inscripción' }}
+              </p>
+              <h2 class="mt-1 text-xl font-black">{{ selectedEvent.title }}</h2>
+            </div>
+            <button type="button" class="text-xl font-black" aria-label="Cerrar" @click="closeRegistrationModal">×</button>
+          </div>
+
+          <div v-if="modalMessage" class="sketch-success mt-4" role="status">{{ modalMessage }}</div>
+          <div v-if="modalError" class="sketch-form-error mt-4" role="alert">{{ modalError }}</div>
+
+          <div class="mt-5 text-sm leading-6 text-slate-600">
+            <template v-if="modalMessage">
+              <p>El estado de tu inscripción ya fue actualizado.</p>
+            </template>
+            <template v-else-if="registrationFor(selectedEvent._id)">
+              <p>¿Quieres liberar tu cupo en esta actividad?</p>
+            </template>
+            <template v-else>
+              <p>¿Quieres reservar un cupo para esta actividad?</p>
+              <p class="mt-2 font-bold text-slate-800">📅 {{ formatEventDate(selectedEvent.date) }} · {{ selectedEvent.time }}</p>
+              <p class="font-bold text-slate-800">📍 {{ selectedEvent.location }}</p>
+            </template>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" class="border-2 border-slate-950 bg-white px-4 py-2 text-sm font-black" @click="closeRegistrationModal">
+              {{ modalMessage ? 'Cerrar' : 'Volver' }}
+            </button>
+            <button
+              v-if="!modalMessage"
+              type="button"
+              :disabled="isProcessingRegistration"
+              class="border-2 border-slate-950 px-4 py-2 text-sm font-black shadow-[3px_3px_0_#0f172a] disabled:opacity-60"
+              :class="registrationFor(selectedEvent._id) ? 'bg-red-100 text-red-700' : 'bg-amber-300 text-slate-950'"
+              @click="confirmRegistrationAction"
+            >
+              {{ isProcessingRegistration
+                ? 'Procesando...'
+                : registrationFor(selectedEvent._id)
+                  ? 'Sí, cancelar inscripción'
+                  : 'Sí, inscribirme' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </main>
 </template>
