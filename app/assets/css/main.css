@@ -1,3 +1,164 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#fffdf7] text-slate-950 antialiased;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  }
+
+  ::selection {
+    @apply bg-amber-300 text-slate-950;
+  }
+}
+
+@layer components {
+  .sketch-app {
+    @apply min-h-screen bg-[#fffdf7] text-slate-950;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgb(125 211 252 / 18%) 0 2px, transparent 3px),
+      radial-gradient(circle at 88% 72%, rgb(252 211 77 / 18%) 0 2px, transparent 3px);
+    background-size: 42px 42px, 54px 54px;
+  }
+
+  .sketch-page {
+    @apply relative;
+  }
+
+  .sketch-page h1 {
+    @apply font-black tracking-tight text-slate-950;
+  }
+
+  .sketch-page h1::after {
+    content: "";
+    @apply mt-2 block h-2 w-28 -rotate-1 bg-sky-300;
+  }
+
+  .sketch-page h2,
+  .sketch-page h3 {
+    @apply font-black text-slate-950;
+  }
+
+  .sketch-page input:not([type="checkbox"]):not([type="file"]),
+  .sketch-page select,
+  .sketch-page textarea {
+    @apply border-2 border-slate-950 bg-white outline-none transition-shadow;
+    border-radius: 0.25rem !important;
+  }
+
+  .sketch-page input:not([type="checkbox"]):not([type="file"]):focus,
+  .sketch-page select:focus,
+  .sketch-page textarea:focus {
+    @apply ring-4 ring-sky-200;
+  }
+
+  .sketch-page .rounded-xl {
+    border-radius: 0.35rem !important;
+  }
+
+  .sketch-page [class~="border-slate-200"][class~="bg-white"] {
+    border-width: 2px;
+    border-color: #0f172a;
+    background-color: white;
+    box-shadow: 6px 6px 0 rgb(125 211 252 / 70%);
+  }
+
+  .sketch-page [class~="bg-brand-dark"] {
+    border-width: 2px;
+    border-color: #0f172a;
+    font-weight: 900;
+    box-shadow: 3px 3px 0 #fbbf24;
+  }
+
+  .sketch-page [class~="bg-brand-dark"]:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 #fbbf24;
+  }
+
+  .sketch-page button,
+  .sketch-page a {
+    @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200;
+  }
+
+  .sketch-navbar {
+    @apply border-b-[3px] border-slate-950 bg-[#fffdf7];
+    box-shadow: 0 4px 0 rgb(125 211 252 / 65%);
+  }
+
+  .sketch-navbar .sketch-brand-icon {
+    @apply border-2 border-slate-950;
+  }
+
+  .sketch-navbar a,
+  .sketch-navbar button {
+    @apply font-bold;
+  }
+
+  .sketch-footer {
+    @apply border-t-[3px] border-slate-950 bg-amber-200 text-slate-800;
+  }
+
+  .sketch-auth-shell {
+    @apply relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fffdf7];
+    background-image:
+      linear-gradient(rgb(15 23 42 / 5%) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(15 23 42 / 5%) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .sketch-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-[2px];
+  }
+
+  .sketch-modal-card {
+    @apply relative w-full border-[3px] border-slate-950 bg-[#fffdf7] p-6;
+    border-radius: 0.35rem !important;
+    box-shadow: 10px 10px 0 #7dd3fc;
+  }
+
+  .sketch-modal-card::before {
+    content: "";
+    @apply absolute -top-2 left-8 h-4 w-16 -rotate-3 bg-amber-300/90;
+  }
+
+  .sketch-form label {
+    @apply font-black text-slate-900;
+  }
+
+  .sketch-form input:not([type="file"]),
+  .sketch-form select,
+  .sketch-form textarea {
+    @apply border-2 border-slate-950 bg-white px-3 py-2.5 text-sm outline-none transition-shadow focus:ring-4 focus:ring-sky-200;
+    border-radius: 0.25rem !important;
+  }
+
+  .sketch-form button[type="submit"] {
+    @apply border-2 border-slate-950 bg-amber-300 px-4 py-2 font-black text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60;
+    box-shadow: 3px 3px 0 #0f172a;
+  }
+
+  .sketch-form button[type="submit"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 5px 5px 0 #0f172a;
+  }
+
+  .sketch-form button[type="button"] {
+    @apply border-2 border-slate-950 bg-white px-4 py-2 font-bold transition hover:-rotate-1 hover:bg-slate-100;
+  }
+
+  .sketch-form-error {
+    @apply border-2 border-red-700 bg-red-50 p-3 text-sm font-semibold text-red-800;
+    box-shadow: 3px 3px 0 #fecaca;
+  }
+
+  .sketch-success {
+    @apply border-2 border-emerald-800 bg-emerald-50 p-3 text-sm font-bold text-emerald-800;
+    box-shadow: 4px 4px 0 #86efac;
+  }
+
+  .sketch-destructive-success {
+    @apply border-2 border-red-700 bg-red-50 p-3 text-sm font-bold text-red-800;
+    box-shadow: 4px 4px 0 #fecaca;
+  }
+}

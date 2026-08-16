@@ -3,6 +3,8 @@
     <NuxtRouteAnnouncer />
     <NuxtPwaManifest />
     <NuxtLoadingIndicator />
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>

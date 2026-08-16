@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Solo accesible si NO hay sesión iniciada (ver app/middleware/guest.ts)
-definePageMeta({ middleware: 'guest' })
+definePageMeta({ middleware: 'guest', layout: 'auth' })
 
 const authStore = useAuthStore()
 
@@ -93,7 +93,7 @@ async function handleSubmit() {
       password: form.password,
       profileImage: avatarBase64.value
     })
-    await navigateTo('/')
+    await navigateTo({ path: '/login', query: { registered: 'true' } })
   } catch (error) {
     serverError.value = error instanceof ApiError
       ? error.message
@@ -107,7 +107,7 @@ const inputClasses = 'w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+  <main class="sketch-page flex min-h-screen items-center justify-center p-6">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
       <div class="mb-2 flex items-center gap-3">
         <img src="/icons/icon-192x192.png" alt="" class="h-10 w-10 rounded-full object-cover">
@@ -118,7 +118,7 @@ const inputClasses = 'w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-
         Crea tu cuenta para participar en actividades y comunidades.
       </p>
 
-      <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <form class="sketch-form flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
         <div
           v-if="serverError"
           class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700"

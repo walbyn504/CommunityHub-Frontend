@@ -50,18 +50,16 @@ export const useAuthStore = defineStore('auth', {
 
     /**
      * Registra un nuevo usuario contra POST /api/auth/register.
-     * El backend NO devuelve token en el registro (solo crea la cuenta), así
-     * que encadenamos un login automático con las mismas credenciales para
-     * no obligar al usuario a escribirlas dos veces.
+     * El backend crea la cuenta sin iniciar sesión. La página de registro
+     * redirige al login para que el usuario confirme sus credenciales.
      */
     async register(newUser: RegisterData) {
       this.isLoading = true
       try {
-        await useApi()('/auth/register', {
+        return await useApi()('/auth/register', {
           method: 'POST',
           body: newUser
         })
-        return await this.login({ email: newUser.email, password: newUser.password })
       } finally {
         this.isLoading = false
       }

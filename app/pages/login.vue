@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Solo accesible si NO hay sesión iniciada (ver app/middleware/guest.ts)
-definePageMeta({ middleware: 'guest' })
+definePageMeta({ middleware: 'guest', layout: 'auth' })
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -17,6 +17,7 @@ const fieldErrors = reactive({
 
 const serverError = ref('')
 const isSubmitting = ref(false)
+const registrationSuccess = computed(() => route.query.registered === 'true')
 
 function validate(): boolean {
   fieldErrors.email = ''
@@ -59,7 +60,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+  <main class="sketch-page flex min-h-screen items-center justify-center p-6">
     <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
       <div class="mb-2 flex items-center gap-3">
         <img src="/icons/icon-192x192.png" alt="" class="h-10 w-10 rounded-full object-cover">
@@ -70,7 +71,11 @@ async function handleSubmit() {
         Inicia sesión para gestionar tus actividades y comunidades.
       </p>
 
-      <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <form class="sketch-form flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+        <div v-if="registrationSuccess" class="sketch-success" role="status">
+          ¡Registro completado con éxito! Ya puedes iniciar sesión con tu nueva cuenta.
+        </div>
+
         <div
           v-if="serverError"
           class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700"
