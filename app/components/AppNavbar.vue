@@ -53,7 +53,7 @@ async function handleLogout() {
   <header class="sketch-navbar sticky top-0 z-40">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
       <NuxtLink to="/" class="flex items-center gap-2" @click="closeMenus">
-        <img src="/icons/icon-192x192.png" alt="" class="h-10 w-10 rounded-full object-cover">
+        <img src="/icons/icon-192x192.png" alt="" class="sketch-brand-icon h-10 w-10 rounded-full object-cover">
         <span class="font-bold text-slate-900">CommunityHub</span>
       </NuxtLink>
 
@@ -80,8 +80,16 @@ async function handleLogout() {
               aria-haspopup="menu"
               @click="userMenuOpen = !userMenuOpen"
             >
-              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-dark text-xs font-semibold text-white">
-                {{ authStore.user?.firstName?.[0] }}{{ authStore.user?.lastName?.[0] }}
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-slate-950 bg-brand-dark text-xs font-semibold text-white">
+                <img
+                  v-if="authStore.user?.profileImage"
+                  :src="authStore.user.profileImage"
+                  :alt="`Foto de perfil de ${authStore.fullName}`"
+                  class="h-full w-full object-cover"
+                >
+                <span v-else>
+                  {{ authStore.user?.firstName?.[0] }}{{ authStore.user?.lastName?.[0] }}
+                </span>
               </span>
               {{ authStore.fullName }}
               <span class="text-xs text-slate-500 transition-transform" :class="userMenuOpen ? 'rotate-180' : ''">▾</span>

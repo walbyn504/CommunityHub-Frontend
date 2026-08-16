@@ -26,18 +26,37 @@ const avatarPreviewUrl = ref<string | null>(authStore.user?.profileImage ?? null
 const profileFieldErrors = reactive({ firstName: '', lastName: '', email: '' })
 const profileError = ref('')
 const isSavingProfile = ref(false)
+const isProcessingAvatar = ref(false)
 
-function handleAvatarChange(event: Event) {
+async function handleAvatarChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    avatarBase64.value = reader.result as string
-    avatarPreviewUrl.value = reader.result as string
+  profileError.value = ''
+  if (!file.type.startsWith('image/')) {
+    profileError.value = 'Selecciona un archivo de imagen válido.'
+    input.value = ''
+    return
   }
-  reader.readAsDataURL(file)
+  if (file.size > 5 * 1024 * 1024) {
+    profileError.value = 'La imagen no puede superar los 5 MB.'
+    input.value = ''
+    return
+  }
+
+  isProcessingAvatar.value = true
+  try {
+    const compressed = await compressImageFile(file)
+    avatarBase64.value = compressed
+    avatarPreviewUrl.value = compressed
+  } catch (error) {
+    avatarBase64.value = null
+    input.value = ''
+    profileError.value = error instanceof Error ? error.message : 'No se pudo procesar la imagen.'
+  } finally {
+    isProcessingAvatar.value = false
+  }
 }
 
 function openEditProfile() {
@@ -253,10 +272,10 @@ async function handlePasswordSubmit() {
               </button>
               <button
                 type="submit"
-                :disabled="isSavingProfile"
+                :disabled="isSavingProfile || isProcessingAvatar"
                 class="rounded-lg bg-brand-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
-                {{ isSavingProfile ? 'Guardando...' : 'Guardar cambios' }}
+                {{ isProcessingAvatar ? 'Preparando imagen...' : isSavingProfile ? 'Guardando...' : 'Guardar cambios' }}
               </button>
             </div>
           </form>

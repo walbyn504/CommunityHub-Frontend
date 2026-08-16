@@ -54,6 +54,7 @@ export interface EventFormData {
   time: string
   location: string
   maxCapacity: number
+  /** Imagen comprimida en Base64 o URL existente devuelta por la API. */
   image?: string | null
   status?: EventStatus
 }

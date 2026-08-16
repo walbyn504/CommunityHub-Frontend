@@ -30,6 +30,12 @@ const showForm = ref(false)
 const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const formError = ref('')
+const selectedImage = ref<File | null>(null)
+const compressedImage = ref<string | null>(null)
+const currentImageUrl = ref<string | null>(null)
+const imageError = ref('')
+const isProcessingImage = ref(false)
+const imageInputKey = ref(0)
 
 const form = reactive({
   title: '',
@@ -38,8 +44,7 @@ const form = reactive({
   date: '',
   time: '',
   location: '',
-  maxCapacity: '' as number | '',
-  image: ''
+  maxCapacity: '' as number | ''
 })
 
 const fieldErrors = reactive({
@@ -60,7 +65,11 @@ function resetForm() {
   form.time = ''
   form.location = ''
   form.maxCapacity = ''
-  form.image = ''
+  selectedImage.value = null
+  compressedImage.value = null
+  currentImageUrl.value = null
+  imageError.value = ''
+  imageInputKey.value += 1
   Object.keys(fieldErrors).forEach((key) => {
     fieldErrors[key as keyof typeof fieldErrors] = ''
   })
@@ -82,7 +91,11 @@ function openEditForm(event: EventItem) {
   form.time = event.time
   form.location = event.location
   form.maxCapacity = event.maxCapacity
-  form.image = event.image ?? ''
+  currentImageUrl.value = event.image
+  selectedImage.value = null
+  compressedImage.value = null
+  imageError.value = ''
+  imageInputKey.value += 1
   formError.value = ''
   showForm.value = true
 }
@@ -92,16 +105,57 @@ function closeForm() {
   resetForm()
 }
 
-function handleImageChange(event: Event) {
+async function handleImageChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file) return
+  imageError.value = ''
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    form.image = reader.result as string
+  if (!file) {
+    selectedImage.value = null
+    compressedImage.value = null
+    return
   }
-  reader.readAsDataURL(file)
+
+  if (!file.type.startsWith('image/')) {
+    imageError.value = 'Selecciona un archivo de imagen válido.'
+    selectedImage.value = null
+    compressedImage.value = null
+    input.value = ''
+    return
+  }
+
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) {
+    imageError.value = 'La imagen no puede superar los 5 MB.'
+    selectedImage.value = null
+    compressedImage.value = null
+    input.value = ''
+    return
+  }
+
+  isProcessingImage.value = true
+  try {
+    compressedImage.value = await compressImageFile(file)
+    selectedImage.value = file
+  } catch (error) {
+    selectedImage.value = null
+    compressedImage.value = null
+    input.value = ''
+    imageError.value = error instanceof Error ? error.message : 'No se pudo procesar la imagen.'
+  } finally {
+    isProcessingImage.value = false
+  }
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function currentImageName() {
+  if (!currentImageUrl.value) return ''
+  const path = currentImageUrl.value.split('?')[0]
+  return decodeURIComponent(path?.split('/').pop() || 'Imagen actual')
 }
 
 function validate(): boolean {
@@ -144,7 +198,7 @@ async function handleSubmit() {
       time: form.time.trim(),
       location: form.location.trim(),
       maxCapacity: Number(form.maxCapacity),
-      image: form.image.trim() || null
+      ...(compressedImage.value ? { image: compressedImage.value } : {})
     }
 
     if (editingId.value) {
@@ -333,14 +387,39 @@ const statusClasses: Record<string, string> = {
 
               <div class="flex flex-col gap-1.5 sm:col-span-2">
                 <label class="text-sm font-semibold text-slate-900">Imagen (opcional)</label>
-                <label
-                  for="eventImage"
-                  class="flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50"
+                <div class="flex min-h-10 items-stretch border-2 border-dashed border-slate-950 bg-white">
+                  <label
+                    for="eventImage"
+                    class="flex cursor-pointer items-center border-r-2 border-slate-950 bg-amber-200 px-3 py-1.5 text-[11px] font-black transition hover:bg-amber-300"
+                  >
+                    Elegir archivo
+                  </label>
+                  <div class="flex min-w-0 flex-1 items-center px-3 py-1.5">
+                    <div v-if="isProcessingImage" class="min-w-0">
+                      <p class="text-xs font-bold text-sky-700">Preparando imagen...</p>
+                      <p class="text-[10px] text-slate-400">Comprimiendo para poder guardarla</p>
+                    </div>
+                    <div v-else-if="selectedImage" class="min-w-0">
+                      <p class="truncate text-xs font-bold text-slate-800">{{ selectedImage.name }}</p>
+                      <p class="text-[10px] text-slate-400">{{ formatFileSize(selectedImage.size) }}</p>
+                    </div>
+                    <div v-else-if="currentImageUrl" class="min-w-0">
+                      <p class="truncate text-xs font-bold text-slate-700">{{ currentImageName() }}</p>
+                      <p class="text-[10px] text-slate-400">Imagen actual · selecciona otra para reemplazarla</p>
+                    </div>
+                    <p v-else class="text-xs text-slate-400">Ningún archivo seleccionado</p>
+                  </div>
+                </div>
+                <input
+                  id="eventImage"
+                  :key="imageInputKey"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  class="sr-only"
+                  @change="handleImageChange"
                 >
-                  <img v-if="form.image" :src="form.image" alt="" class="h-full w-full object-cover">
-                  <span v-else class="text-xs text-slate-400">Haz clic para seleccionar una imagen</span>
-                </label>
-                <input id="eventImage" type="file" accept="image/*" class="sr-only" @change="handleImageChange">
+                <span v-if="imageError" class="text-xs font-semibold text-red-600">{{ imageError }}</span>
+                <span v-else class="text-xs text-slate-400">PNG, JPG, WEBP o GIF · máximo 5 MB</span>
               </div>
             </div>
 
@@ -354,10 +433,10 @@ const statusClasses: Record<string, string> = {
               </button>
               <button
                 type="submit"
-                :disabled="isSubmitting"
+                :disabled="isSubmitting || isProcessingImage"
                 class="rounded-lg bg-brand-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
-                {{ isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear actividad' }}
+                {{ isProcessingImage ? 'Preparando imagen...' : isSubmitting ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear actividad' }}
               </button>
             </div>
           </form>

@@ -86,7 +86,7 @@
     box-shadow: 0 4px 0 rgb(125 211 252 / 65%);
   }
 
-  .sketch-navbar img {
+  .sketch-navbar .sketch-brand-icon {
     @apply border-2 border-slate-950;
   }
 
