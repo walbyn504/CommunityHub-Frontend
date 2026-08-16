@@ -17,6 +17,7 @@ const fieldErrors = reactive({
 
 const serverError = ref('')
 const isSubmitting = ref(false)
+const registrationSuccess = computed(() => route.query.registered === 'true')
 
 function validate(): boolean {
   fieldErrors.email = ''
@@ -71,6 +72,10 @@ async function handleSubmit() {
       </p>
 
       <form class="sketch-form flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+        <div v-if="registrationSuccess" class="sketch-success" role="status">
+          ¡Registro completado con éxito! Ya puedes iniciar sesión con tu nueva cuenta.
+        </div>
+
         <div
           v-if="serverError"
           class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700"

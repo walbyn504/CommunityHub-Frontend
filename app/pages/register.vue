@@ -93,7 +93,7 @@ async function handleSubmit() {
       password: form.password,
       profileImage: avatarBase64.value
     })
-    await navigateTo('/')
+    await navigateTo({ path: '/login', query: { registered: 'true' } })
   } catch (error) {
     serverError.value = error instanceof ApiError
       ? error.message

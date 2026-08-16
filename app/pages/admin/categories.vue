@@ -12,6 +12,7 @@ const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const formError = ref('')
 const listError = ref('')
+const successMessage = ref('')
 
 const form = reactive({
   name: '',
@@ -48,6 +49,7 @@ function closeForm() {
 }
 
 async function handleSubmit() {
+  successMessage.value = ''
   formError.value = ''
   nameError.value = ''
 
@@ -60,6 +62,7 @@ async function handleSubmit() {
   try {
     const payload = { name: form.name.trim(), description: form.description.trim() }
 
+    const wasEditing = !!editingId.value
     if (editingId.value) {
       await update(editingId.value, payload)
     } else {
@@ -68,6 +71,9 @@ async function handleSubmit() {
 
     closeForm()
     await refresh()
+    successMessage.value = wasEditing
+      ? 'La categoría fue editada correctamente.'
+      : 'La categoría fue creada correctamente.'
   } catch (err) {
     formError.value = err instanceof ApiError
       ? err.message
@@ -82,9 +88,11 @@ async function handleDelete(category: Category) {
   if (!confirmed) return
 
   listError.value = ''
+  successMessage.value = ''
   try {
     await remove(category._id)
     await refresh()
+    successMessage.value = 'La categoría fue eliminada correctamente.'
   } catch (err) {
     // Ej: "No se puede eliminar la categoria porque tiene actividades asociadas."
     listError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la categoría.'
@@ -123,6 +131,14 @@ async function handleDelete(category: Category) {
           </button>
         </div>
       </header>
+
+      <div
+        v-if="successMessage"
+        class="sketch-success mt-6"
+        role="status"
+      >
+        {{ successMessage }}
+      </div>
 
       <div
         v-if="listError"

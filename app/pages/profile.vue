@@ -12,6 +12,7 @@ const roleLabels: Record<string, string> = {
 
 const showEditProfile = ref(false)
 const showChangePassword = ref(false)
+const successMessage = ref('')
 
 // --- Datos personales ---
 const profileForm = reactive({
@@ -60,6 +61,7 @@ async function handleAvatarChange(event: Event) {
 }
 
 function openEditProfile() {
+  successMessage.value = ''
   profileForm.firstName = authStore.user?.firstName ?? ''
   profileForm.lastName = authStore.user?.lastName ?? ''
   profileForm.email = authStore.user?.email ?? ''
@@ -100,6 +102,7 @@ async function handleProfileSubmit() {
     })
     await authStore.fetchMe()
     showEditProfile.value = false
+    successMessage.value = 'Tu perfil fue actualizado correctamente.'
   } catch (err) {
     profileError.value = err instanceof ApiError
       ? err.message
@@ -116,6 +119,7 @@ const passwordError = ref('')
 const isSavingPassword = ref(false)
 
 function openChangePassword() {
+  successMessage.value = ''
   passwordForm.password = ''
   passwordForm.confirmPassword = ''
   passwordError.value = ''
@@ -147,6 +151,7 @@ async function handlePasswordSubmit() {
   try {
     await update(authStore.user.id, { password: passwordForm.password })
     showChangePassword.value = false
+    successMessage.value = 'Tu contraseña fue actualizada correctamente.'
   } catch (err) {
     passwordError.value = err instanceof ApiError
       ? err.message
@@ -159,6 +164,10 @@ async function handlePasswordSubmit() {
 
 <template>
   <main class="sketch-page mx-auto max-w-md px-4 py-10">
+    <div v-if="successMessage" class="sketch-success mb-6" role="status">
+      {{ successMessage }}
+    </div>
+
     <div class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-8 text-center">
       <div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-slate-100">
         <img

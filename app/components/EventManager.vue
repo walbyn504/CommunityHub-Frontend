@@ -30,6 +30,7 @@ const showForm = ref(false)
 const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const formError = ref('')
+const successMessage = ref('')
 const selectedImage = ref<File | null>(null)
 const compressedImage = ref<string | null>(null)
 const currentImageUrl = ref<string | null>(null)
@@ -185,6 +186,7 @@ function validate(): boolean {
 }
 
 async function handleSubmit() {
+  successMessage.value = ''
   formError.value = ''
   if (!validate()) return
 
@@ -201,6 +203,7 @@ async function handleSubmit() {
       ...(compressedImage.value ? { image: compressedImage.value } : {})
     }
 
+    const wasEditing = !!editingId.value
     if (editingId.value) {
       await update(editingId.value, payload)
     } else {
@@ -209,6 +212,9 @@ async function handleSubmit() {
 
     closeForm()
     await refresh()
+    successMessage.value = wasEditing
+      ? 'La actividad fue editada correctamente.'
+      : 'La actividad fue creada correctamente.'
   } catch (err) {
     formError.value = err instanceof ApiError
       ? err.message
@@ -222,18 +228,24 @@ async function handleDelete(event: EventItem) {
   const confirmed = confirm(`¿Seguro que quieres eliminar "${event.title}"? Esta acción no se puede deshacer.`)
   if (!confirmed) return
 
+  successMessage.value = ''
   try {
     await remove(event._id)
     await refresh()
+    successMessage.value = 'La actividad fue eliminada correctamente.'
   } catch (err) {
     alert(err instanceof ApiError ? err.message : 'No se pudo eliminar la actividad.')
   }
 }
 
 async function changeStatus(event: EventItem, status: 'PUBLISHED' | 'CANCELLED') {
+  successMessage.value = ''
   try {
     await update(event._id, { status })
     await refresh()
+    successMessage.value = status === 'PUBLISHED'
+      ? 'La actividad fue publicada correctamente.'
+      : 'La actividad fue cancelada correctamente.'
   } catch (err) {
     alert(err instanceof ApiError ? err.message : 'No se pudo actualizar el estado.')
   }
@@ -274,6 +286,10 @@ const statusClasses: Record<string, string> = {
       >
         + Nueva actividad
       </button>
+    </div>
+
+    <div v-if="successMessage" class="sketch-success mt-6" role="status">
+      {{ successMessage }}
     </div>
 
     <!-- Formulario de crear/editar, en modal para no empujar la lista -->
