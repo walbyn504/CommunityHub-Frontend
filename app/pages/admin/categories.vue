@@ -14,6 +14,9 @@ const formError = ref('')
 const listError = ref('')
 const successMessage = ref('')
 const successIsDestructive = ref(false)
+const categoryToDelete = ref<Category | null>(null)
+const isDeleting = ref(false)
+const deleteError = ref('')
 
 const form = reactive({
   name: '',
@@ -85,20 +88,34 @@ async function handleSubmit() {
   }
 }
 
-async function handleDelete(category: Category) {
-  const confirmed = confirm(`¿Seguro que quieres eliminar la categoría "${category.name}"?`)
-  if (!confirmed) return
+function openDeleteModal(category: Category) {
+  categoryToDelete.value = category
+  deleteError.value = ''
+}
+
+function closeDeleteModal() {
+  if (isDeleting.value) return
+  categoryToDelete.value = null
+  deleteError.value = ''
+}
+
+async function confirmDelete() {
+  if (!categoryToDelete.value) return
 
   listError.value = ''
   successMessage.value = ''
   successIsDestructive.value = true
+  deleteError.value = ''
+  isDeleting.value = true
   try {
-    await remove(category._id)
+    await remove(categoryToDelete.value._id)
     await refresh()
+    categoryToDelete.value = null
     successMessage.value = 'La categoría fue eliminada correctamente.'
   } catch (err) {
-    // Ej: "No se puede eliminar la categoria porque tiene actividades asociadas."
-    listError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la categoría.'
+    deleteError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la categoría.'
+  } finally {
+    isDeleting.value = false
   }
 }
 </script>
@@ -273,7 +290,7 @@ async function handleDelete(category: Category) {
             <button
               type="button"
               class="text-xs font-black uppercase tracking-wide text-red-600 decoration-2 underline-offset-4 hover:underline"
-              @click="handleDelete(category)"
+              @click="openDeleteModal(category)"
             >
               Eliminar
             </button>
@@ -281,5 +298,18 @@ async function handleDelete(category: Category) {
         </li>
       </ul>
     </div>
+
+    <ConfirmActionModal
+      :open="!!categoryToDelete"
+      title="Eliminar categoría"
+      :subject="categoryToDelete?.name || ''"
+      message="¿Seguro que quieres eliminar esta categoría?"
+      confirm-label="Sí, eliminar categoría"
+      pending-label="Eliminando..."
+      :pending="isDeleting"
+      :error="deleteError"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
+    />
   </main>
 </template>

@@ -9,6 +9,10 @@ const { list, update, remove } = useUsers()
 
 const roleFilter = ref<UserRole | ''>('')
 const actionError = ref('')
+const deleteSuccess = ref('')
+const userToDelete = ref<UserRecord | null>(null)
+const isDeleting = ref(false)
+const deleteError = ref('')
 
 const {
   data: users,
@@ -49,16 +53,34 @@ async function handleRoleChange(user: UserRecord, event: Event) {
   }
 }
 
-async function handleDelete(user: UserRecord) {
-  const confirmed = confirm(`¿Seguro que quieres eliminar a "${user.firstName} ${user.lastName}"? Esta acción no se puede deshacer.`)
-  if (!confirmed) return
+function openDeleteModal(user: UserRecord) {
+  userToDelete.value = user
+  deleteError.value = ''
+}
+
+function closeDeleteModal() {
+  if (isDeleting.value) return
+  userToDelete.value = null
+  deleteError.value = ''
+}
+
+async function confirmDelete() {
+  if (!userToDelete.value) return
 
   actionError.value = ''
+  deleteSuccess.value = ''
+  deleteError.value = ''
+  isDeleting.value = true
+  const fullName = `${userToDelete.value.firstName} ${userToDelete.value.lastName}`
   try {
-    await remove(user.id)
+    await remove(userToDelete.value.id)
     await refresh()
+    userToDelete.value = null
+    deleteSuccess.value = `El usuario “${fullName}” fue eliminado correctamente.`
   } catch (err) {
-    actionError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar el usuario.'
+    deleteError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar el usuario.'
+  } finally {
+    isDeleting.value = false
   }
 }
 </script>
@@ -80,6 +102,9 @@ async function handleDelete(user: UserRecord) {
 
     <div v-if="actionError" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
       {{ actionError }}
+    </div>
+    <div v-if="deleteSuccess" class="sketch-destructive-success mt-4" role="status">
+      {{ deleteSuccess }}
     </div>
 
     <div v-if="pending" class="mt-8 text-center text-sm text-slate-500">Cargando usuarios...</div>
@@ -125,7 +150,7 @@ async function handleDelete(user: UserRecord) {
                 v-if="user.id !== authStore.user?.id"
                 type="button"
                 class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
-                @click="handleDelete(user)"
+                @click="openDeleteModal(user)"
               >
                 Eliminar
               </button>
@@ -134,5 +159,18 @@ async function handleDelete(user: UserRecord) {
         </tbody>
       </table>
     </div>
+
+    <ConfirmActionModal
+      :open="!!userToDelete"
+      title="Eliminar usuario"
+      :subject="userToDelete ? `${userToDelete.firstName} ${userToDelete.lastName}` : ''"
+      message="¿Seguro que quieres eliminar permanentemente este usuario?"
+      confirm-label="Sí, eliminar usuario"
+      pending-label="Eliminando..."
+      :pending="isDeleting"
+      :error="deleteError"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
+    />
   </main>
 </template>

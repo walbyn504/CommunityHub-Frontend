@@ -32,6 +32,9 @@ const isSubmitting = ref(false)
 const formError = ref('')
 const successMessage = ref('')
 const successIsDestructive = ref(false)
+const eventToDelete = ref<EventItem | null>(null)
+const isDeleting = ref(false)
+const deleteError = ref('')
 const selectedImage = ref<File | null>(null)
 const compressedImage = ref<string | null>(null)
 const currentImageUrl = ref<string | null>(null)
@@ -222,18 +225,33 @@ async function handleSubmit() {
   }
 }
 
-async function handleDelete(event: EventItem) {
-  const confirmed = confirm(`¿Seguro que quieres eliminar "${event.title}"? Esta acción no se puede deshacer.`)
-  if (!confirmed) return
+function openDeleteModal(event: EventItem) {
+  eventToDelete.value = event
+  deleteError.value = ''
+}
+
+function closeDeleteModal() {
+  if (isDeleting.value) return
+  eventToDelete.value = null
+  deleteError.value = ''
+}
+
+async function confirmDelete() {
+  if (!eventToDelete.value) return
 
   successMessage.value = ''
   successIsDestructive.value = true
+  deleteError.value = ''
+  isDeleting.value = true
   try {
-    await remove(event._id)
+    await remove(eventToDelete.value._id)
     await refresh()
+    eventToDelete.value = null
     successMessage.value = 'La actividad fue eliminada correctamente.'
   } catch (err) {
-    alert(err instanceof ApiError ? err.message : 'No se pudo eliminar la actividad.')
+    deleteError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la actividad.'
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -525,12 +543,25 @@ const statusClasses: Record<string, string> = {
           <button
             type="button"
             class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
-            @click="handleDelete(event)"
+            @click="openDeleteModal(event)"
           >
             Eliminar
           </button>
         </div>
       </li>
     </ul>
+
+    <ConfirmActionModal
+      :open="!!eventToDelete"
+      title="Eliminar actividad"
+      :subject="eventToDelete?.title || ''"
+      message="¿Seguro que quieres eliminar permanentemente esta actividad?"
+      confirm-label="Sí, eliminar actividad"
+      pending-label="Eliminando..."
+      :pending="isDeleting"
+      :error="deleteError"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
+    />
   </main>
 </template>

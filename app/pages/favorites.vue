@@ -7,6 +7,8 @@ const { listMine, remove } = useFavorites()
 const successMessage = ref('')
 const actionError = ref('')
 const removingId = ref<string | null>(null)
+const favoriteToRemove = ref<FavoriteItem | null>(null)
+const removeError = ref('')
 
 const { data: favorites, pending, error, refresh } = await useAsyncData(
   'my-favorites-list',
@@ -17,19 +19,33 @@ function populatedEvent(favorite: FavoriteItem): FavoriteEvent | null {
   return favorite.event && typeof favorite.event !== 'string' ? favorite.event : null
 }
 
-async function removeFavorite(favorite: FavoriteItem) {
-  const event = populatedEvent(favorite)
+function openRemoveModal(favorite: FavoriteItem) {
+  favoriteToRemove.value = favorite
+  removeError.value = ''
+}
+
+function closeRemoveModal() {
+  if (removingId.value) return
+  favoriteToRemove.value = null
+  removeError.value = ''
+}
+
+async function confirmRemoveFavorite() {
+  if (!favoriteToRemove.value) return
+  const event = populatedEvent(favoriteToRemove.value)
   if (!event) return
 
   successMessage.value = ''
   actionError.value = ''
-  removingId.value = favorite._id
+  removeError.value = ''
+  removingId.value = favoriteToRemove.value._id
   try {
     await remove(event._id)
     await refresh()
+    favoriteToRemove.value = null
     successMessage.value = `“${event.title}” se eliminó de tus favoritos.`
   } catch (err) {
-    actionError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la actividad de favoritos.'
+    removeError.value = err instanceof ApiError ? err.message : 'No se pudo eliminar la actividad de favoritos.'
   } finally {
     removingId.value = null
   }
@@ -92,7 +108,7 @@ async function removeFavorite(favorite: FavoriteItem) {
                 type="button"
                 :disabled="removingId === favorite._id"
                 class="text-xs font-black text-rose-700 hover:underline disabled:opacity-50"
-                @click="removeFavorite(favorite)"
+                @click="openRemoveModal(favorite)"
               >
                 {{ removingId === favorite._id ? 'Eliminando...' : 'Quitar favorito' }}
               </button>
@@ -102,5 +118,19 @@ async function removeFavorite(favorite: FavoriteItem) {
         <p v-else class="p-5 text-sm text-slate-500">La actividad asociada ya no está disponible.</p>
       </li>
     </ul>
+
+    <ConfirmActionModal
+      :open="!!favoriteToRemove"
+      title="Quitar de favoritos"
+      :subject="favoriteToRemove ? populatedEvent(favoriteToRemove)?.title || '' : ''"
+      message="¿Seguro que quieres quitar esta actividad de tus favoritos?"
+      warning="Podrás volver a guardarla cuando quieras."
+      confirm-label="Sí, quitar favorito"
+      pending-label="Eliminando..."
+      :pending="!!removingId"
+      :error="removeError"
+      @confirm="confirmRemoveFavorite"
+      @cancel="closeRemoveModal"
+    />
   </main>
 </template>

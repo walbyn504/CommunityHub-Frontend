@@ -54,6 +54,7 @@ const favoriteMessage = ref('')
 const favoriteError = ref('')
 const favoriteMessageIsDestructive = ref(false)
 const processingFavoriteId = ref<string | null>(null)
+const favoriteToRemove = ref<EventItem | null>(null)
 
 function registrationFor(eventId: string) {
   return registrations.value?.find((registration) => {
@@ -88,6 +89,7 @@ async function toggleFavorite(event: EventItem) {
   try {
     if (isFavorite) {
       await removeFavorite(event._id)
+      favoriteToRemove.value = null
       favoriteMessage.value = `“${event.title}” se eliminó de tus favoritos.`
     } else {
       await addFavorite(event._id)
@@ -101,6 +103,20 @@ async function toggleFavorite(event: EventItem) {
   } finally {
     processingFavoriteId.value = null
   }
+}
+
+function handleFavoriteAction(event: EventItem) {
+  if (favoriteFor(event._id)) {
+    favoriteError.value = ''
+    favoriteToRemove.value = event
+    return
+  }
+  void toggleFavorite(event)
+}
+
+function closeFavoriteModal() {
+  if (processingFavoriteId.value) return
+  favoriteToRemove.value = null
 }
 
 function openRegistrationModal(event: EventItem) {
@@ -277,7 +293,7 @@ function clearFilters() {
           :class="favoriteFor(event._id) ? 'text-rose-600' : 'text-slate-500'"
           :aria-label="favoriteFor(event._id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
           :title="favoriteFor(event._id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
-          @click="toggleFavorite(event)"
+          @click="handleFavoriteAction(event)"
         >
           {{ favoriteFor(event._id) ? '♥' : '♡' }}
         </button>
@@ -388,5 +404,19 @@ function clearFilters() {
         </div>
       </div>
     </Teleport>
+
+    <ConfirmActionModal
+      :open="!!favoriteToRemove"
+      title="Quitar de favoritos"
+      :subject="favoriteToRemove?.title || ''"
+      message="¿Seguro que quieres quitar esta actividad de tus favoritos?"
+      warning="Podrás volver a guardarla cuando quieras."
+      confirm-label="Sí, quitar favorito"
+      pending-label="Eliminando..."
+      :pending="!!processingFavoriteId"
+      :error="favoriteError"
+      @confirm="favoriteToRemove && toggleFavorite(favoriteToRemove)"
+      @cancel="closeFavoriteModal"
+    />
   </main>
 </template>

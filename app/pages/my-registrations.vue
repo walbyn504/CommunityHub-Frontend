@@ -8,6 +8,8 @@ const statusFilter = ref<RegistrationStatus | ''>('')
 const successMessage = ref('')
 const actionError = ref('')
 const cancellingId = ref<string | null>(null)
+const registrationToCancel = ref<RegistrationItem | null>(null)
+const cancelError = ref('')
 
 const {
   data: registrations,
@@ -24,19 +26,33 @@ function populatedEvent(registration: RegistrationItem): RegisteredEvent | null 
   return registration.event && typeof registration.event !== 'string' ? registration.event : null
 }
 
-async function cancelRegistration(registration: RegistrationItem) {
-  const event = populatedEvent(registration)
-  if (!event || !confirm(`¿Seguro que quieres cancelar tu inscripción a "${event.title}"?`)) return
+function openCancelModal(registration: RegistrationItem) {
+  registrationToCancel.value = registration
+  cancelError.value = ''
+}
+
+function closeCancelModal() {
+  if (cancellingId.value) return
+  registrationToCancel.value = null
+  cancelError.value = ''
+}
+
+async function confirmCancellation() {
+  if (!registrationToCancel.value) return
+  const event = populatedEvent(registrationToCancel.value)
+  if (!event) return
 
   successMessage.value = ''
   actionError.value = ''
-  cancellingId.value = registration._id
+  cancelError.value = ''
+  cancellingId.value = registrationToCancel.value._id
   try {
     await cancel(event._id)
     await refresh()
+    registrationToCancel.value = null
     successMessage.value = 'Tu inscripción fue cancelada correctamente.'
   } catch (err) {
-    actionError.value = err instanceof ApiError ? err.message : 'No se pudo cancelar la inscripción.'
+    cancelError.value = err instanceof ApiError ? err.message : 'No se pudo cancelar la inscripción.'
   } finally {
     cancellingId.value = null
   }
@@ -121,7 +137,7 @@ async function cancelRegistration(registration: RegistrationItem) {
               type="button"
               :disabled="cancellingId === registration._id"
               class="text-sm font-black text-red-600 hover:underline disabled:opacity-50"
-              @click="cancelRegistration(registration)"
+              @click="openCancelModal(registration)"
             >
               {{ cancellingId === registration._id ? 'Cancelando...' : 'Cancelar' }}
             </button>
@@ -130,5 +146,19 @@ async function cancelRegistration(registration: RegistrationItem) {
         <p v-else class="text-sm text-slate-500">La actividad asociada ya no está disponible.</p>
       </li>
     </ul>
+
+    <ConfirmActionModal
+      :open="!!registrationToCancel"
+      title="Cancelar inscripción"
+      :subject="registrationToCancel ? populatedEvent(registrationToCancel)?.title || '' : ''"
+      message="¿Seguro que quieres cancelar tu inscripción a esta actividad?"
+      warning="Tu cupo quedará disponible para otra persona."
+      confirm-label="Sí, cancelar inscripción"
+      pending-label="Cancelando..."
+      :pending="!!cancellingId"
+      :error="cancelError"
+      @confirm="confirmCancellation"
+      @cancel="closeCancelModal"
+    />
   </main>
 </template>

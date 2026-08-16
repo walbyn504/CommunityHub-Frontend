@@ -50,6 +50,8 @@ const isProcessingFavorite = ref(false)
 const favoriteMessage = ref('')
 const favoriteError = ref('')
 const favoriteMessageIsDestructive = ref(false)
+const showCancelRegistrationModal = ref(false)
+const showRemoveFavoriteModal = ref(false)
 
 async function toggleCurrentFavorite() {
   if (!authStore.isAuthenticated) {
@@ -66,6 +68,7 @@ async function toggleCurrentFavorite() {
   try {
     if (isFavorite) {
       await removeFavorite(eventId.value)
+      showRemoveFavoriteModal.value = false
       favoriteMessage.value = 'La actividad se eliminó de tus favoritos.'
     } else {
       await addFavorite(eventId.value)
@@ -77,6 +80,15 @@ async function toggleCurrentFavorite() {
   } finally {
     isProcessingFavorite.value = false
   }
+}
+
+function handleFavoriteAction() {
+  if (currentFavorite.value) {
+    favoriteError.value = ''
+    showRemoveFavoriteModal.value = true
+    return
+  }
+  void toggleCurrentFavorite()
 }
 
 async function registerCurrentUser() {
@@ -106,8 +118,6 @@ async function registerCurrentUser() {
 }
 
 async function cancelCurrentRegistration() {
-  if (!confirm('¿Seguro que quieres cancelar tu inscripción?')) return
-
   registrationMessage.value = ''
   registrationError.value = ''
   registrationMessageIsDestructive.value = true
@@ -115,6 +125,7 @@ async function cancelCurrentRegistration() {
   try {
     await cancel(eventId.value)
     await Promise.all([refreshRegistrations(), refreshEvent()])
+    showCancelRegistrationModal.value = false
     registrationMessage.value = 'Tu inscripción fue cancelada correctamente.'
   } catch (err) {
     registrationError.value = err instanceof ApiError ? err.message : 'No se pudo cancelar la inscripción.'
@@ -176,7 +187,7 @@ const statusLabels: Record<string, string> = {
           :disabled="isProcessingFavorite"
           class="ml-auto flex items-center gap-2 border-2 border-slate-950 bg-white px-3 py-1.5 text-xs font-black shadow-[3px_3px_0_#fda4af] transition hover:-translate-y-0.5 disabled:opacity-60"
           :class="currentFavorite ? 'text-rose-700' : 'text-slate-700'"
-          @click="toggleCurrentFavorite"
+          @click="handleFavoriteAction"
         >
           <span class="text-lg" aria-hidden="true">{{ currentFavorite ? '♥' : '♡' }}</span>
           {{ isProcessingFavorite ? 'Guardando...' : currentFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos' }}
@@ -255,7 +266,7 @@ const statusLabels: Record<string, string> = {
             type="button"
             :disabled="isProcessingRegistration"
             class="border-2 border-red-700 bg-red-50 px-4 py-2 text-sm font-black text-red-700 shadow-[3px_3px_0_#fecaca] disabled:opacity-60"
-            @click="cancelCurrentRegistration"
+            @click="showCancelRegistrationModal = true"
           >
             {{ isProcessingRegistration ? 'Cancelando...' : 'Cancelar inscripción' }}
           </button>
@@ -277,5 +288,33 @@ const statusLabels: Record<string, string> = {
         </div>
       </section>
     </article>
+
+    <ConfirmActionModal
+      :open="showCancelRegistrationModal"
+      title="Cancelar inscripción"
+      :subject="event?.title || ''"
+      message="¿Seguro que quieres cancelar tu inscripción a esta actividad?"
+      warning="Tu cupo quedará disponible para otra persona."
+      confirm-label="Sí, cancelar inscripción"
+      pending-label="Cancelando..."
+      :pending="isProcessingRegistration"
+      :error="registrationError"
+      @confirm="cancelCurrentRegistration"
+      @cancel="showCancelRegistrationModal = false"
+    />
+
+    <ConfirmActionModal
+      :open="showRemoveFavoriteModal"
+      title="Quitar de favoritos"
+      :subject="event?.title || ''"
+      message="¿Seguro que quieres quitar esta actividad de tus favoritos?"
+      warning="Podrás volver a guardarla cuando quieras."
+      confirm-label="Sí, quitar favorito"
+      pending-label="Eliminando..."
+      :pending="isProcessingFavorite"
+      :error="favoriteError"
+      @confirm="toggleCurrentFavorite"
+      @cancel="showRemoveFavoriteModal = false"
+    />
   </main>
 </template>
