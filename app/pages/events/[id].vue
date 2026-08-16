@@ -1,11 +1,78 @@
 <script setup lang="ts">
 const route = useRoute()
+const authStore = useAuthStore()
 const { getById } = useEvents()
+const { register, cancel, listMine } = useRegistrations()
+const eventId = computed(() => route.params.id as string)
 
-const { data: event, pending, error } = await useAsyncData(
+const { data: event, pending, error, refresh: refreshEvent } = await useAsyncData(
   `event-${route.params.id}`,
-  () => getById(route.params.id as string)
+  () => getById(eventId.value)
 )
+
+const { data: registrations, refresh: refreshRegistrations } = await useAsyncData(
+  `event-${route.params.id}-registration`,
+  () => authStore.isAuthenticated ? listMine() : Promise.resolve([]),
+  { server: false, watch: [() => authStore.isAuthenticated] }
+)
+
+const confirmedRegistration = computed(() => registrations.value?.find((registration) => {
+  const registeredEventId = typeof registration.event === 'string'
+    ? registration.event
+    : registration.event?._id
+  return registeredEventId === eventId.value && registration.status === 'CONFIRMED'
+}))
+
+const eventHasPassed = computed(() => event.value
+  ? hasEventPassed(event.value.date, event.value.time)
+  : false
+)
+
+const isProcessingRegistration = ref(false)
+const registrationMessage = ref('')
+const registrationError = ref('')
+
+async function registerCurrentUser() {
+  if (eventHasPassed.value) {
+    registrationError.value = 'Esta actividad ya finalizó y no admite nuevas inscripciones.'
+    return
+  }
+
+  if (!authStore.isAuthenticated) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  registrationMessage.value = ''
+  registrationError.value = ''
+  isProcessingRegistration.value = true
+  try {
+    await register(eventId.value)
+    await Promise.all([refreshRegistrations(), refreshEvent()])
+    registrationMessage.value = 'Te inscribiste correctamente en esta actividad.'
+  } catch (err) {
+    registrationError.value = err instanceof ApiError ? err.message : 'No se pudo completar la inscripción.'
+  } finally {
+    isProcessingRegistration.value = false
+  }
+}
+
+async function cancelCurrentRegistration() {
+  if (!confirm('¿Seguro que quieres cancelar tu inscripción?')) return
+
+  registrationMessage.value = ''
+  registrationError.value = ''
+  isProcessingRegistration.value = true
+  try {
+    await cancel(eventId.value)
+    await Promise.all([refreshRegistrations(), refreshEvent()])
+    registrationMessage.value = 'Tu inscripción fue cancelada correctamente.'
+  } catch (err) {
+    registrationError.value = err instanceof ApiError ? err.message : 'No se pudo cancelar la inscripción.'
+  } finally {
+    isProcessingRegistration.value = false
+  }
+}
 
 const statusLabels: Record<string, string> = {
   DRAFT: 'Borrador',
@@ -14,14 +81,6 @@ const statusLabels: Record<string, string> = {
   FINISHED: 'Finalizada'
 }
 
-function formatDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString('es-ES', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
-}
 </script>
 
 <template>
@@ -52,7 +111,13 @@ function formatDate(isoDate: string) {
           {{ event.category.name }}
         </span>
         <span
-          v-if="event.status !== 'PUBLISHED'"
+          v-if="eventHasPassed"
+          class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+        >
+          Finalizada por fecha
+        </span>
+        <span
+          v-else-if="event.status !== 'PUBLISHED'"
           class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
         >
           {{ statusLabels[event.status] ?? event.status }}
@@ -65,7 +130,7 @@ function formatDate(isoDate: string) {
       <dl class="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
         <div>
           <dt class="text-xs font-semibold uppercase text-slate-400">Fecha</dt>
-          <dd class="mt-1 text-sm text-slate-700 capitalize">{{ formatDate(event.date) }}</dd>
+          <dd class="mt-1 text-sm text-slate-700 capitalize">{{ formatEventDate(event.date, 'long') }}</dd>
         </div>
         <div>
           <dt class="text-xs font-semibold uppercase text-slate-400">Hora</dt>
@@ -90,6 +155,55 @@ function formatDate(isoDate: string) {
           </dd>
         </div>
       </dl>
+
+      <section class="mt-7 border-[3px] border-slate-950 bg-[#fffdf7] p-5 shadow-[7px_7px_0_#fcd34d]">
+        <div v-if="registrationMessage" class="sketch-success mb-4" role="status">
+          {{ registrationMessage }}
+        </div>
+        <div v-if="registrationError" class="sketch-form-error mb-4" role="alert">
+          {{ registrationError }}
+        </div>
+
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-lg font-black">Participa en esta actividad</h2>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ confirmedRegistration
+                ? 'Tu cupo está confirmado.'
+                : eventHasPassed
+                  ? 'Esta actividad ya finalizó y no admite nuevas inscripciones.'
+                  : event.availableSpots > 0
+                  ? 'Reserva uno de los cupos disponibles.'
+                  : 'Actualmente no quedan cupos disponibles.' }}
+            </p>
+          </div>
+
+          <button
+            v-if="confirmedRegistration"
+            type="button"
+            :disabled="isProcessingRegistration"
+            class="border-2 border-red-700 bg-red-50 px-4 py-2 text-sm font-black text-red-700 shadow-[3px_3px_0_#fecaca] disabled:opacity-60"
+            @click="cancelCurrentRegistration"
+          >
+            {{ isProcessingRegistration ? 'Cancelando...' : 'Cancelar inscripción' }}
+          </button>
+          <button
+            v-else
+            type="button"
+            :disabled="isProcessingRegistration || eventHasPassed || event.status !== 'PUBLISHED' || event.availableSpots <= 0"
+            class="border-2 border-slate-950 bg-amber-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[4px_4px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+            @click="registerCurrentUser"
+          >
+            {{ isProcessingRegistration
+              ? 'Inscribiendo...'
+              : eventHasPassed
+                ? 'Actividad finalizada'
+                : authStore.isAuthenticated
+                  ? 'Inscribirme'
+                  : 'Inicia sesión para inscribirte' }}
+          </button>
+        </div>
+      </section>
     </article>
   </main>
 </template>
