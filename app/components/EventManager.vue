@@ -92,6 +92,18 @@ function closeForm() {
   resetForm()
 }
 
+function handleImageChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    form.image = reader.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
 function validate(): boolean {
   Object.keys(fieldErrors).forEach((key) => {
     fieldErrors[key as keyof typeof fieldErrors] = ''
@@ -215,7 +227,6 @@ const statusClasses: Record<string, string> = {
       <div
         v-if="showForm"
         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-        @click.self="closeForm"
       >
         <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
           <div class="flex items-center justify-between">
@@ -321,13 +332,15 @@ const statusClasses: Record<string, string> = {
               </div>
 
               <div class="flex flex-col gap-1.5 sm:col-span-2">
-                <label class="text-sm font-semibold text-slate-900">URL de imagen (opcional)</label>
-                <input
-                  v-model="form.image"
-                  type="text"
-                  placeholder="https://..."
-                  class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                <label class="text-sm font-semibold text-slate-900">Imagen (opcional)</label>
+                <label
+                  for="eventImage"
+                  class="flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50"
                 >
+                  <img v-if="form.image" :src="form.image" alt="" class="h-full w-full object-cover">
+                  <span v-else class="text-xs text-slate-400">Haz clic para seleccionar una imagen</span>
+                </label>
+                <input id="eventImage" type="file" accept="image/*" class="sr-only" @change="handleImageChange">
               </div>
             </div>
 
