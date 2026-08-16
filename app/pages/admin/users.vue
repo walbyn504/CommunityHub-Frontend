@@ -49,12 +49,9 @@ async function handleRoleChange(user: UserRecord, event: Event) {
 
   if (newRole === user.role) return
 
-  if (user.id === authStore.user?.id) {
-    const confirmed = confirm('Estás a punto de cambiar tu propio rol de administrador. ¿Seguro que quieres continuar?')
-    if (!confirmed) {
-      select.value = user.role
-      return
-    }
+  if (isCurrentAdmin(user)) {
+    select.value = user.role
+    return
   }
 
   actionError.value = ''
@@ -151,8 +148,10 @@ async function confirmDelete() {
             <td class="px-4 py-3 text-slate-600">{{ user.email }}</td>
             <td class="px-4 py-3">
               <select
-                class="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+                class="rounded-lg border border-slate-300 px-2 py-1.5 text-xs disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                 :value="user.role"
+                :disabled="isCurrentAdmin(user)"
+                :title="isCurrentAdmin(user) ? 'No puedes cambiar el rol de tu propia cuenta' : 'Cambiar rol'"
                 @change="handleRoleChange(user, $event)"
               >
                 <option v-for="(label, value) in roleLabels" :key="value" :value="value">{{ label }}</option>
