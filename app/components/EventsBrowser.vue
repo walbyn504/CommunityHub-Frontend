@@ -49,8 +49,10 @@ const selectedEvent = ref<EventItem | null>(null)
 const isProcessingRegistration = ref(false)
 const modalMessage = ref('')
 const modalError = ref('')
+const modalMessageIsDestructive = ref(false)
 const favoriteMessage = ref('')
 const favoriteError = ref('')
+const favoriteMessageIsDestructive = ref(false)
 const processingFavoriteId = ref<string | null>(null)
 
 function registrationFor(eventId: string) {
@@ -81,6 +83,7 @@ async function toggleFavorite(event: EventItem) {
   favoriteError.value = ''
   processingFavoriteId.value = event._id
   const isFavorite = !!favoriteFor(event._id)
+  favoriteMessageIsDestructive.value = isFavorite
 
   try {
     if (isFavorite) {
@@ -104,6 +107,7 @@ function openRegistrationModal(event: EventItem) {
   selectedEvent.value = event
   modalMessage.value = ''
   modalError.value = ''
+  modalMessageIsDestructive.value = false
 }
 
 function closeRegistrationModal() {
@@ -125,6 +129,7 @@ async function confirmRegistrationAction() {
   modalError.value = ''
   isProcessingRegistration.value = true
   const isRegistered = !!registrationFor(selectedEvent.value._id)
+  modalMessageIsDestructive.value = isRegistered
 
   try {
     if (isRegistered) {
@@ -164,7 +169,12 @@ function clearFilters() {
     <h1 class="text-2xl font-bold text-slate-900">Actividades</h1>
     <p class="mt-1 text-sm text-slate-500">Explora y encuentra actividades de tu comunidad.</p>
 
-    <div v-if="favoriteMessage" class="sketch-success mt-5" role="status">{{ favoriteMessage }}</div>
+    <div
+      v-if="favoriteMessage"
+      class="mt-5"
+      :class="favoriteMessageIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
+      role="status"
+    >{{ favoriteMessage }}</div>
     <div v-if="favoriteError" class="sketch-form-error mt-5" role="alert">{{ favoriteError }}</div>
 
     <form
@@ -334,7 +344,12 @@ function clearFilters() {
             <button type="button" class="text-xl font-black" aria-label="Cerrar" @click="closeRegistrationModal">×</button>
           </div>
 
-          <div v-if="modalMessage" class="sketch-success mt-4" role="status">{{ modalMessage }}</div>
+          <div
+            v-if="modalMessage"
+            class="mt-4"
+            :class="modalMessageIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
+            role="status"
+          >{{ modalMessage }}</div>
           <div v-if="modalError" class="sketch-form-error mt-4" role="alert">{{ modalError }}</div>
 
           <div class="mt-5 text-sm leading-6 text-slate-600">

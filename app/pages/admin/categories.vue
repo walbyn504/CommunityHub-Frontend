@@ -13,6 +13,7 @@ const isSubmitting = ref(false)
 const formError = ref('')
 const listError = ref('')
 const successMessage = ref('')
+const successIsDestructive = ref(false)
 
 const form = reactive({
   name: '',
@@ -50,6 +51,7 @@ function closeForm() {
 
 async function handleSubmit() {
   successMessage.value = ''
+  successIsDestructive.value = false
   formError.value = ''
   nameError.value = ''
 
@@ -89,6 +91,7 @@ async function handleDelete(category: Category) {
 
   listError.value = ''
   successMessage.value = ''
+  successIsDestructive.value = true
   try {
     await remove(category._id)
     await refresh()
@@ -134,7 +137,8 @@ async function handleDelete(category: Category) {
 
       <div
         v-if="successMessage"
-        class="sketch-success mt-6"
+        class="mt-6"
+        :class="successIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
         role="status"
       >
         {{ successMessage }}

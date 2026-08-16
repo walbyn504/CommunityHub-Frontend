@@ -65,7 +65,7 @@ async function cancelRegistration(registration: RegistrationItem) {
       </div>
     </header>
 
-    <div v-if="successMessage" class="sketch-success mt-6" role="status">{{ successMessage }}</div>
+    <div v-if="successMessage" class="sketch-destructive-success mt-6" role="status">{{ successMessage }}</div>
     <div v-if="actionError" class="sketch-form-error mt-6" role="alert">{{ actionError }}</div>
 
     <div v-if="pending" class="mt-10 grid gap-5 sm:grid-cols-2">

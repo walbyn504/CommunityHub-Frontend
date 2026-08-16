@@ -156,4 +156,9 @@
     @apply border-2 border-emerald-800 bg-emerald-50 p-3 text-sm font-bold text-emerald-800;
     box-shadow: 4px 4px 0 #86efac;
   }
+
+  .sketch-destructive-success {
+    @apply border-2 border-red-700 bg-red-50 p-3 text-sm font-bold text-red-800;
+    box-shadow: 4px 4px 0 #fecaca;
+  }
 }

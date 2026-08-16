@@ -31,6 +31,7 @@ const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const formError = ref('')
 const successMessage = ref('')
+const successIsDestructive = ref(false)
 const selectedImage = ref<File | null>(null)
 const compressedImage = ref<string | null>(null)
 const currentImageUrl = ref<string | null>(null)
@@ -183,6 +184,7 @@ function validate(): boolean {
 
 async function handleSubmit() {
   successMessage.value = ''
+  successIsDestructive.value = false
   formError.value = ''
   if (!validate()) return
 
@@ -225,6 +227,7 @@ async function handleDelete(event: EventItem) {
   if (!confirmed) return
 
   successMessage.value = ''
+  successIsDestructive.value = true
   try {
     await remove(event._id)
     await refresh()
@@ -236,6 +239,7 @@ async function handleDelete(event: EventItem) {
 
 async function changeStatus(event: EventItem, status: 'PUBLISHED' | 'CANCELLED') {
   successMessage.value = ''
+  successIsDestructive.value = status === 'CANCELLED'
   try {
     await update(event._id, { status })
     await refresh()
@@ -284,7 +288,12 @@ const statusClasses: Record<string, string> = {
       </button>
     </div>
 
-    <div v-if="successMessage" class="sketch-success mt-6" role="status">
+    <div
+      v-if="successMessage"
+      class="mt-6"
+      :class="successIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
+      role="status"
+    >
       {{ successMessage }}
     </div>
 

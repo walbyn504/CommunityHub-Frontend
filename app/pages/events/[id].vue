@@ -45,9 +45,11 @@ const currentFavorite = computed(() => favorites.value?.find((favorite) => {
 const isProcessingRegistration = ref(false)
 const registrationMessage = ref('')
 const registrationError = ref('')
+const registrationMessageIsDestructive = ref(false)
 const isProcessingFavorite = ref(false)
 const favoriteMessage = ref('')
 const favoriteError = ref('')
+const favoriteMessageIsDestructive = ref(false)
 
 async function toggleCurrentFavorite() {
   if (!authStore.isAuthenticated) {
@@ -59,6 +61,7 @@ async function toggleCurrentFavorite() {
   favoriteError.value = ''
   isProcessingFavorite.value = true
   const isFavorite = !!currentFavorite.value
+  favoriteMessageIsDestructive.value = isFavorite
 
   try {
     if (isFavorite) {
@@ -89,6 +92,7 @@ async function registerCurrentUser() {
 
   registrationMessage.value = ''
   registrationError.value = ''
+  registrationMessageIsDestructive.value = false
   isProcessingRegistration.value = true
   try {
     await register(eventId.value)
@@ -106,6 +110,7 @@ async function cancelCurrentRegistration() {
 
   registrationMessage.value = ''
   registrationError.value = ''
+  registrationMessageIsDestructive.value = true
   isProcessingRegistration.value = true
   try {
     await cancel(eventId.value)
@@ -181,7 +186,12 @@ const statusLabels: Record<string, string> = {
       <h1 class="mt-3 text-2xl font-bold text-slate-900">{{ event.title }}</h1>
       <p class="mt-2 whitespace-pre-line text-slate-600">{{ event.description }}</p>
 
-      <div v-if="favoriteMessage" class="sketch-success mt-5" role="status">{{ favoriteMessage }}</div>
+      <div
+        v-if="favoriteMessage"
+        class="mt-5"
+        :class="favoriteMessageIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
+        role="status"
+      >{{ favoriteMessage }}</div>
       <div v-if="favoriteError" class="sketch-form-error mt-5" role="alert">{{ favoriteError }}</div>
 
       <dl class="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
@@ -214,7 +224,12 @@ const statusLabels: Record<string, string> = {
       </dl>
 
       <section class="mt-7 border-[3px] border-slate-950 bg-[#fffdf7] p-5 shadow-[7px_7px_0_#fcd34d]">
-        <div v-if="registrationMessage" class="sketch-success mb-4" role="status">
+        <div
+          v-if="registrationMessage"
+          class="mb-4"
+          :class="registrationMessageIsDestructive ? 'sketch-destructive-success' : 'sketch-success'"
+          role="status"
+        >
           {{ registrationMessage }}
         </div>
         <div v-if="registrationError" class="sketch-form-error mb-4" role="alert">
