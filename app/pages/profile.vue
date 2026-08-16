@@ -139,7 +139,7 @@ async function handlePasswordSubmit() {
 </script>
 
 <template>
-  <main class="mx-auto max-w-md px-4 py-8">
+  <main class="sketch-page mx-auto max-w-md px-4 py-10">
     <div class="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-8 text-center">
       <div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-slate-100">
         <img
@@ -181,18 +181,18 @@ async function handlePasswordSubmit() {
     <Teleport to="body">
       <div
         v-if="showEditProfile"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+        class="sketch-modal"
       >
-        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-          <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-slate-900">Editar perfil</h2>
+        <div class="sketch-modal-card max-h-[90vh] max-w-md overflow-y-auto">
+          <div class="flex items-center justify-between border-b-2 border-dashed border-slate-300 pb-4">
+            <h2 class="text-xl font-black text-slate-950">Editar perfil</h2>
             <button type="button" class="text-xl leading-none text-slate-400 hover:text-slate-600" aria-label="Cerrar" @click="showEditProfile = false">
               ×
             </button>
           </div>
 
-          <form class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="handleProfileSubmit">
-            <div v-if="profileError" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <form class="sketch-form mt-4 flex flex-col gap-4" novalidate @submit.prevent="handleProfileSubmit">
+            <div v-if="profileError" class="sketch-form-error">
               {{ profileError }}
             </div>
 
@@ -268,18 +268,18 @@ async function handlePasswordSubmit() {
     <Teleport to="body">
       <div
         v-if="showChangePassword"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+        class="sketch-modal"
       >
-        <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
-          <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-slate-900">Cambiar contraseña</h2>
+        <div class="sketch-modal-card max-w-md">
+          <div class="flex items-center justify-between border-b-2 border-dashed border-slate-300 pb-4">
+            <h2 class="text-xl font-black text-slate-950">Cambiar contraseña</h2>
             <button type="button" class="text-xl leading-none text-slate-400 hover:text-slate-600" aria-label="Cerrar" @click="showChangePassword = false">
               ×
             </button>
           </div>
 
-          <form class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="handlePasswordSubmit">
-            <div v-if="passwordError" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <form class="sketch-form mt-4 flex flex-col gap-4" novalidate @submit.prevent="handlePasswordSubmit">
+            <div v-if="passwordError" class="sketch-form-error">
               {{ passwordError }}
             </div>
 

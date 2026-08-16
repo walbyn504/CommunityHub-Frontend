@@ -50,10 +50,10 @@ async function handleLogout() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white">
+  <header class="sketch-navbar sticky top-0 z-40">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
       <NuxtLink to="/" class="flex items-center gap-2" @click="closeMenus">
-        <img src="/icons/icon-192x192.png" alt="" class="h-8 w-8 rounded-full">
+        <img src="/icons/icon-192x192.png" alt="" class="h-10 w-10 rounded-full object-cover">
         <span class="font-bold text-slate-900">CommunityHub</span>
       </NuxtLink>
 
@@ -75,14 +75,16 @@ async function handleLogout() {
           <div class="relative">
             <button
               type="button"
-              class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              class="flex items-center gap-2 border-2 border-transparent px-2 py-1.5 text-sm font-bold text-slate-700 transition hover:-rotate-1 hover:border-slate-950 hover:bg-amber-200"
+              :aria-expanded="userMenuOpen"
+              aria-haspopup="menu"
               @click="userMenuOpen = !userMenuOpen"
             >
               <span class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-dark text-xs font-semibold text-white">
                 {{ authStore.user?.firstName?.[0] }}{{ authStore.user?.lastName?.[0] }}
               </span>
               {{ authStore.fullName }}
-              <span class="text-xs text-slate-400">▾</span>
+              <span class="text-xs text-slate-500 transition-transform" :class="userMenuOpen ? 'rotate-180' : ''">▾</span>
             </button>
 
             <!-- Fondo invisible para cerrar el menú al hacer clic afuera -->
@@ -90,56 +92,64 @@ async function handleLogout() {
 
             <div
               v-if="userMenuOpen"
-              class="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg"
+              class="absolute right-0 z-50 mt-3 w-64 rotate-[0.4deg] border-[3px] border-slate-950 bg-[#fffdf7] py-2 shadow-[7px_7px_0_#7dd3fc]"
+              role="menu"
             >
-              <div class="border-b border-slate-100 px-3 pb-2">
-                <p class="text-sm font-semibold text-slate-900">{{ authStore.fullName }}</p>
-                <p class="truncate text-xs text-slate-400">{{ authStore.user?.email }}</p>
+              <div aria-hidden="true" class="absolute -top-2 left-8 h-4 w-16 -rotate-3 bg-amber-300/90" />
+
+              <div class="mx-3 border-b-2 border-dashed border-slate-300 px-1 pb-3 pt-2">
+                <p class="text-sm font-black text-slate-950">{{ authStore.fullName }}</p>
+                <p class="mt-0.5 truncate text-xs text-slate-500">{{ authStore.user?.email }}</p>
               </div>
 
-              <div class="py-1">
+              <div class="px-2 py-2">
                 <template v-for="link in accountLinks" :key="link.label">
                   <NuxtLink
                     v-if="!link.disabled"
                     :to="link.to"
-                    class="block px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                    class="group flex items-center gap-2 border-2 border-transparent px-2 py-2 text-sm font-bold text-slate-700 transition hover:-rotate-[0.5deg] hover:border-slate-950 hover:bg-amber-200"
+                    role="menuitem"
                     @click="userMenuOpen = false"
                   >
+                    <span aria-hidden="true" class="text-sky-500 transition-transform group-hover:rotate-45">✦</span>
                     {{ link.label }}
                   </NuxtLink>
-                  <span v-else class="flex cursor-not-allowed items-center justify-between px-3 py-1.5 text-sm text-slate-300">
+                  <span v-else class="flex cursor-not-allowed items-center justify-between px-2 py-2 text-sm text-slate-300">
                     {{ link.label }}
-                    <span class="text-[10px]">Próximamente</span>
+                    <span class="-rotate-2 bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase">Pronto</span>
                   </span>
                 </template>
               </div>
 
               <template v-if="adminLinks.length">
-                <p class="border-t border-slate-100 px-3 pb-1 pt-2 text-[11px] font-semibold uppercase text-slate-400">
+                <p class="mx-3 border-t-2 border-dashed border-slate-300 px-1 pb-1 pt-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                   Administración
                 </p>
-                <div class="py-1">
+                <div class="px-2 py-1">
                   <template v-for="link in adminLinks" :key="link.label">
                     <NuxtLink
                       v-if="!link.disabled"
                       :to="link.to"
-                      class="block px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                      class="group flex items-center gap-2 border-2 border-transparent px-2 py-2 text-sm font-bold text-slate-700 transition hover:rotate-[0.5deg] hover:border-slate-950 hover:bg-sky-200"
+                      role="menuitem"
                       @click="userMenuOpen = false"
                     >
+                      <span aria-hidden="true" class="text-amber-500">◆</span>
                       {{ link.label }}
                     </NuxtLink>
-                    <span v-else class="flex cursor-not-allowed items-center justify-between px-3 py-1.5 text-sm text-slate-300">
+                    <span v-else class="flex cursor-not-allowed items-center justify-between px-2 py-2 text-sm text-slate-300">
                       {{ link.label }}
-                      <span class="text-[10px]">Próximamente</span>
+                      <span class="-rotate-2 bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase">Pronto</span>
                     </span>
                   </template>
                 </div>
               </template>
 
-              <div class="border-t border-slate-100 pt-1">
+              <div class="mx-3 border-t-2 border-dashed border-slate-300 pt-2">
                 <button
                   type="button"
-                  class="block w-full px-3 py-1.5 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                  class="block w-full border-2 border-transparent px-2 py-2 text-left text-sm font-black text-red-600 transition hover:rotate-[0.5deg] hover:border-red-700 hover:bg-red-100"
+                  role="menuitem"
                   @click="handleLogout"
                 >
                   Cerrar sesión
@@ -173,7 +183,7 @@ async function handleLogout() {
     </div>
 
     <!-- Menú móvil -->
-    <div v-if="mobileOpen" class="border-t border-slate-200 bg-white px-4 py-3 sm:hidden">
+    <div v-if="mobileOpen" class="border-t-[3px] border-slate-950 bg-[#fffdf7] px-4 py-4 shadow-[0_6px_0_#fcd34d] sm:hidden">
       <nav class="flex flex-col gap-1">
         <NuxtLink
           v-for="link in primaryLinks"

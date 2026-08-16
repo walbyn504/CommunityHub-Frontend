@@ -201,7 +201,7 @@ const statusClasses: Record<string, string> = {
 </script>
 
 <template>
-  <main class="mx-auto max-w-4xl px-4 py-8">
+  <main class="sketch-page mx-auto max-w-4xl px-4 py-10">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">
@@ -226,16 +226,16 @@ const statusClasses: Record<string, string> = {
     <Teleport to="body">
       <div
         v-if="showForm"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+        class="sketch-modal"
       >
-        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-          <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-slate-900">
+        <div class="sketch-modal-card max-h-[90vh] max-w-lg overflow-y-auto">
+          <div class="flex items-center justify-between border-b-2 border-dashed border-slate-300 pb-4">
+            <h2 class="text-xl font-black text-slate-950">
               {{ editingId ? 'Editar actividad' : 'Nueva actividad' }}
             </h2>
             <button
               type="button"
-              class="text-xl leading-none text-slate-400 hover:text-slate-600"
+              class="flex h-9 w-9 rotate-2 items-center justify-center border-2 border-slate-950 bg-white text-xl font-black leading-none transition hover:-rotate-3 hover:bg-amber-200"
               aria-label="Cerrar"
               @click="closeForm"
             >
@@ -243,8 +243,8 @@ const statusClasses: Record<string, string> = {
             </button>
           </div>
 
-          <form class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
-            <div v-if="formError" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <form class="sketch-form mt-4 flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+            <div v-if="formError" class="sketch-form-error">
               {{ formError }}
             </div>
 

@@ -64,7 +64,7 @@ async function handleDelete(user: UserRecord) {
 </script>
 
 <template>
-  <main class="mx-auto max-w-5xl px-4 py-8">
+  <main class="sketch-page mx-auto max-w-5xl px-4 py-10">
     <h1 class="text-2xl font-bold text-slate-900">Usuarios</h1>
     <p class="mt-1 text-sm text-slate-500">Gestiona los usuarios registrados y sus roles.</p>
 

@@ -25,7 +25,7 @@ function formatDate(isoDate: string) {
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl px-4 py-8">
+  <main class="sketch-page mx-auto max-w-3xl px-4 py-10">
     <NuxtLink to="/events" class="text-sm font-semibold text-sky-600 hover:underline">← Volver a actividades</NuxtLink>
 
     <div v-if="pending" class="mt-10 text-center text-sm text-slate-500">

@@ -50,7 +50,7 @@ function formatDate(isoDate: string) {
 </script>
 
 <template>
-  <main class="mx-auto max-w-6xl px-4 py-8">
+  <main class="sketch-page mx-auto max-w-6xl px-4 py-10">
     <h1 class="text-2xl font-bold text-slate-900">Actividades</h1>
     <p class="mt-1 text-sm text-slate-500">Explora y encuentra actividades de tu comunidad.</p>
 
