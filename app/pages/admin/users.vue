@@ -29,6 +29,20 @@ const roleLabels: Record<UserRole, string> = {
   ADMIN: 'Administrador'
 }
 
+const displayedUsers = computed(() => {
+  if (!users.value) return []
+
+  return [...users.value].sort((first, second) => {
+    const firstIsCurrentAdmin = first.id === authStore.user?.id && first.role === 'ADMIN'
+    const secondIsCurrentAdmin = second.id === authStore.user?.id && second.role === 'ADMIN'
+    return Number(secondIsCurrentAdmin) - Number(firstIsCurrentAdmin)
+  })
+})
+
+function isCurrentAdmin(user: UserRecord) {
+  return user.id === authStore.user?.id && user.role === 'ADMIN'
+}
+
 async function handleRoleChange(user: UserRecord, event: Event) {
   const select = event.target as HTMLSelectElement
   const newRole = select.value as UserRole
@@ -129,10 +143,10 @@ async function confirmDelete() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id" class="border-b border-slate-100 last:border-0">
+          <tr v-for="user in displayedUsers" :key="user.id" class="border-b border-slate-100 last:border-0">
             <td class="px-4 py-3 font-medium text-slate-900">
               {{ user.firstName }} {{ user.lastName }}
-              <span v-if="user.id === authStore.user?.id" class="ml-1 text-xs text-slate-400">(tú)</span>
+              <span v-if="isCurrentAdmin(user)" class="ml-1 text-xs text-slate-400">(tú)</span>
             </td>
             <td class="px-4 py-3 text-slate-600">{{ user.email }}</td>
             <td class="px-4 py-3">
