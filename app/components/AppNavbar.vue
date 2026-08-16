@@ -31,8 +31,8 @@ const adminLinks = computed<NavLink[]>(() =>
   authStore.isAdmin
     ? [
         { label: 'Usuarios', to: '/admin/users' },
-        { label: 'Actividades (admin)', to: '/admin/events', disabled: true },
-        { label: 'Categorías', to: '/admin/categories', disabled: true },
+        { label: 'Actividades (admin)', to: '/admin/events' },
+        { label: 'Categorías', to: '/admin/categories' },
         { label: 'Estadísticas', to: '/admin/statistics', disabled: true }
       ]
     : []
