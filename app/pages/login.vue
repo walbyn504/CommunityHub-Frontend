@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Solo accesible si NO hay sesión iniciada (ver app/middleware/guest.ts)
-definePageMeta({ middleware: 'guest' })
+definePageMeta({ middleware: 'guest', layout: 'auth' })
 
 const route = useRoute()
 const authStore = useAuthStore()
