@@ -22,7 +22,7 @@ const primaryLinks = computed<NavLink[]>(() => [
 const accountLinks: NavLink[] = [
   { label: 'Mi perfil', to: '/profile' },
   { label: 'Dashboard', to: '/dashboard', disabled: true },
-  { label: 'Mis inscripciones', to: '/my-registrations', disabled: true },
+  { label: 'Mis inscripciones', to: '/my-registrations' },
   { label: 'Favoritos', to: '/favorites', disabled: true },
   { label: 'Notificaciones', to: '/notifications', disabled: true }
 ]
