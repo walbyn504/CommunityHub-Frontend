@@ -117,7 +117,6 @@ async function handleDelete(category: Category) {
       <div
         v-if="showForm"
         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-        @click.self="closeForm"
       >
         <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
           <div class="flex items-center justify-between">
