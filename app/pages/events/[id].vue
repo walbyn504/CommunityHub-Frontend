@@ -3,6 +3,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const { getById } = useEvents()
 const { register, cancel, listMine } = useRegistrations()
+const { add: addFavorite, remove: removeFavorite, listMine: listFavorites } = useFavorites()
 const eventId = computed(() => route.params.id as string)
 
 const { data: event, pending, error, refresh: refreshEvent } = await useAsyncData(
@@ -13,6 +14,12 @@ const { data: event, pending, error, refresh: refreshEvent } = await useAsyncDat
 const { data: registrations, refresh: refreshRegistrations } = await useAsyncData(
   `event-${route.params.id}-registration`,
   () => authStore.isAuthenticated ? listMine() : Promise.resolve([]),
+  { server: false, watch: [() => authStore.isAuthenticated] }
+)
+
+const { data: favorites, refresh: refreshFavorites } = await useAsyncData(
+  `event-${route.params.id}-favorite`,
+  () => authStore.isAuthenticated ? listFavorites() : Promise.resolve([]),
   { server: false, watch: [() => authStore.isAuthenticated] }
 )
 
@@ -28,9 +35,46 @@ const eventHasPassed = computed(() => event.value
   : false
 )
 
+const currentFavorite = computed(() => favorites.value?.find((favorite) => {
+  const favoriteEventId = typeof favorite.event === 'string'
+    ? favorite.event
+    : favorite.event?._id
+  return favoriteEventId === eventId.value
+}))
+
 const isProcessingRegistration = ref(false)
 const registrationMessage = ref('')
 const registrationError = ref('')
+const isProcessingFavorite = ref(false)
+const favoriteMessage = ref('')
+const favoriteError = ref('')
+
+async function toggleCurrentFavorite() {
+  if (!authStore.isAuthenticated) {
+    await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
+  favoriteMessage.value = ''
+  favoriteError.value = ''
+  isProcessingFavorite.value = true
+  const isFavorite = !!currentFavorite.value
+
+  try {
+    if (isFavorite) {
+      await removeFavorite(eventId.value)
+      favoriteMessage.value = 'La actividad se eliminó de tus favoritos.'
+    } else {
+      await addFavorite(eventId.value)
+      favoriteMessage.value = 'La actividad se agregó a tus favoritos.'
+    }
+    await refreshFavorites()
+  } catch (err) {
+    favoriteError.value = err instanceof ApiError ? err.message : 'No se pudo actualizar la actividad favorita.'
+  } finally {
+    isProcessingFavorite.value = false
+  }
+}
 
 async function registerCurrentUser() {
   if (eventHasPassed.value) {
@@ -122,10 +166,23 @@ const statusLabels: Record<string, string> = {
         >
           {{ statusLabels[event.status] ?? event.status }}
         </span>
+        <button
+          type="button"
+          :disabled="isProcessingFavorite"
+          class="ml-auto flex items-center gap-2 border-2 border-slate-950 bg-white px-3 py-1.5 text-xs font-black shadow-[3px_3px_0_#fda4af] transition hover:-translate-y-0.5 disabled:opacity-60"
+          :class="currentFavorite ? 'text-rose-700' : 'text-slate-700'"
+          @click="toggleCurrentFavorite"
+        >
+          <span class="text-lg" aria-hidden="true">{{ currentFavorite ? '♥' : '♡' }}</span>
+          {{ isProcessingFavorite ? 'Guardando...' : currentFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos' }}
+        </button>
       </div>
 
       <h1 class="mt-3 text-2xl font-bold text-slate-900">{{ event.title }}</h1>
       <p class="mt-2 whitespace-pre-line text-slate-600">{{ event.description }}</p>
+
+      <div v-if="favoriteMessage" class="sketch-success mt-5" role="status">{{ favoriteMessage }}</div>
+      <div v-if="favoriteError" class="sketch-form-error mt-5" role="alert">{{ favoriteError }}</div>
 
       <dl class="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
         <div>
