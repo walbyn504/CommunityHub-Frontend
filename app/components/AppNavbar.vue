@@ -20,7 +20,7 @@ const primaryLinks = computed<NavLink[]>(() => [
 // Páginas del enunciado que aún no están construidas: se muestran
 // deshabilitadas ("Próximamente") en vez de omitirlas o dejarlas rotas.
 const accountLinks: NavLink[] = [
-  { label: 'Mi perfil', to: '/profile', disabled: true },
+  { label: 'Mi perfil', to: '/profile' },
   { label: 'Dashboard', to: '/dashboard', disabled: true },
   { label: 'Mis inscripciones', to: '/my-registrations', disabled: true },
   { label: 'Favoritos', to: '/favorites', disabled: true },
