@@ -7,21 +7,23 @@ export interface AdminDashboardStats {
   finishedActivities: number
 }
 
-export interface DashboardTimeSeriesData {
-  date: string
-  users: number
-  activities: number
-  registrations: number
+export interface DashboardChartDataset {
+  label: string
+  data: number[]
 }
 
-export interface DashboardCategoryData {
-  category: string
-  count: number
+export interface DashboardChart {
+  labels: string[]
+  datasets: DashboardChartDataset[]
 }
 
 export interface AdminDashboardResponse {
   role: 'ADMIN'
+  generatedAt: string
   stats: AdminDashboardStats
-  timeSeries?: DashboardTimeSeriesData[]
-  categoriesData?: DashboardCategoryData[]
+  charts: {
+    usersByRole: DashboardChart
+    eventsByStatus: DashboardChart
+    monthlyRegistrations: DashboardChart
+  }
 }
