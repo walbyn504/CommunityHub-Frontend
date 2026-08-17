@@ -26,6 +26,7 @@ const primaryLinks = computed<NavLink[]>(() => [
 
 // Enlaces disponibles para cualquier usuario autenticado.
 const accountLinks = computed<NavLink[]>(() => [
+  ...(authStore.role === 'USER' ? [{ label: 'Dashboard', to: '/dashboard' }] : []),
   { label: 'Mi perfil', to: '/profile' },
   { label: 'Mis inscripciones', to: '/my-registrations' },
   { label: 'Favoritos', to: '/favorites' },
@@ -35,7 +36,7 @@ const accountLinks = computed<NavLink[]>(() => [
 const adminLinks = computed<NavLink[]>(() =>
   authStore.isAdmin
     ? [
-        { label: 'Dashboard', to: '/dashboard' },
+          { label: 'Dashboard', to: '/admin/statistics' },
         { label: 'Usuarios', to: '/admin/users' },
         { label: 'Actividades (admin)', to: '/admin/events' },
         { label: 'Categorías', to: '/admin/categories' }
