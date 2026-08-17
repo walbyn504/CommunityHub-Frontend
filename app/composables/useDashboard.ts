@@ -1,4 +1,4 @@
-import type { AdminDashboardResponse, UserDashboardResponse } from '~/types/dashboard'
+import type { AdminDashboardResponse, OrganizerDashboardResponse, UserDashboardResponse } from '~/types/dashboard'
 
 export function useDashboard() {
   const api = useApi()
@@ -12,5 +12,9 @@ export function useDashboard() {
     return api<UserDashboardResponse>('/dashboard')
   }
 
-  return { getAdminDashboard, getUserDashboard }
+  function getOrganizerDashboard() {
+    return api<OrganizerDashboardResponse>('/dashboard')
+  }
+
+  return { getAdminDashboard, getUserDashboard, getOrganizerDashboard }
 }

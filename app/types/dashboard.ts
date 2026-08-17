@@ -66,3 +66,30 @@ export interface UserDashboardResponse {
   historyActivities: UserDashboardEvent[]
   recentNotifications: UserDashboardNotification[]
 }
+
+export interface OrganizerDashboardEvent extends UserDashboardEvent {
+  maxCapacity: number
+  status: string
+}
+
+export interface OrganizerDashboardStats {
+  activitiesCreated: number
+  participants: number
+  availableCapacity: number
+  upcomingActivities: number
+  cancelledActivities: number
+  activities: number
+  draftActivities: number
+  activeActivities: number
+  finishedActivities: number
+  registrations: number
+  confirmedRegistrations: number
+  cancelledRegistrations: number
+}
+
+export interface OrganizerDashboardResponse {
+  role: 'ORGANIZER'
+  generatedAt: string
+  stats: OrganizerDashboardStats
+  upcomingActivities: OrganizerDashboardEvent[]
+}
