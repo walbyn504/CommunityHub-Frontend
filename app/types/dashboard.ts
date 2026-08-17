@@ -27,3 +27,42 @@ export interface AdminDashboardResponse {
     monthlyRegistrations: DashboardChart
   }
 }
+
+export interface UserDashboardEvent {
+  _id: string
+  title: string
+  date: string
+  time: string
+  location: string
+  image?: string
+  category?: { _id: string; name: string }
+}
+
+export interface UserDashboardNotification {
+  _id: string
+  type: string
+  message: string
+  read: boolean
+  createdAt: string
+  event?: { _id: string; title: string; date: string; status: string } | null
+}
+
+export interface UserDashboardStats {
+  registeredActivities: number
+  confirmedRegistrations: number
+  cancelledRegistrations: number
+  favorites: number
+  history: number
+  notifications: number
+  unreadNotifications: number
+  upcomingActivities: number
+}
+
+export interface UserDashboardResponse {
+  role: 'USER'
+  generatedAt: string
+  stats: UserDashboardStats
+  upcomingActivities: UserDashboardEvent[]
+  historyActivities: UserDashboardEvent[]
+  recentNotifications: UserDashboardNotification[]
+}

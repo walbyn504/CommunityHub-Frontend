@@ -1,4 +1,4 @@
-import type { AdminDashboardResponse } from '~/types/dashboard'
+import type { AdminDashboardResponse, UserDashboardResponse } from '~/types/dashboard'
 
 export function useDashboard() {
   const api = useApi()
@@ -8,5 +8,9 @@ export function useDashboard() {
     return api<AdminDashboardResponse>('/dashboard')
   }
 
-  return { getAdminDashboard }
+  function getUserDashboard() {
+    return api<UserDashboardResponse>('/dashboard')
+  }
+
+  return { getAdminDashboard, getUserDashboard }
 }
