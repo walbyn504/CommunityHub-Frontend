@@ -21,11 +21,11 @@ function formatDateTime(value: string) {
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-100 px-4 py-8 sm:px-6">
-    <section class="mx-auto max-w-7xl">
-      <header class="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
+  <main class="sketch-page min-h-screen px-4 py-10 sm:px-6">
+    <section class="mx-auto max-w-6xl">
+      <header class="flex flex-col gap-4 border-b-2 border-dashed border-slate-300 pb-7 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-sm font-semibold text-blue-600">Mi espacio</p>
+          <p class="text-sm font-black uppercase tracking-[0.16em] text-sky-700">Mi espacio</p>
           <h1 class="mt-1 text-3xl font-bold text-slate-900">Dashboard personal</h1>
           <p class="mt-1 text-sm text-slate-500">Resumen de tu actividad en CommunityHub</p>
         </div>
@@ -34,7 +34,7 @@ function formatDateTime(value: string) {
           <button
             type="button"
             :disabled="pending"
-            class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+            class="border-2 border-slate-950 bg-amber-300 px-4 py-2 text-sm font-black text-slate-950 shadow-[3px_3px_0_#0f172a] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#0f172a] disabled:opacity-50"
             @click="refresh()"
           >
             {{ pending ? 'Actualizando...' : 'Actualizar' }}
@@ -52,7 +52,7 @@ function formatDateTime(value: string) {
 
       <template v-else-if="dashboard">
         <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Estadísticas del usuario">
-          <NuxtLink v-for="card in cards" :key="card.label" :to="card.to" class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <NuxtLink v-for="card in cards" :key="card.label" :to="card.to" class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:-rotate-[0.3deg]">
             <span class="absolute inset-y-0 left-0 w-1.5" :class="card.color" />
             <div class="pl-2">
               <p class="text-sm font-medium text-slate-500">{{ card.label }}</p>
