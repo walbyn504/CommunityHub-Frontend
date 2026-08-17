@@ -41,14 +41,9 @@ const chartData = computed(() => {
           props.stats.activities,
           props.stats.registrations
         ],
-        backgroundColor: [
-          '#0ea5e9', // sky
-          '#f59e0b', // amber
-          '#ec4899', // pink
-          '#10b981'  // emerald
-        ],
-        borderColor: '#000000',
-        borderWidth: 2
+        backgroundColor: ['#2563eb', '#06b6d4', '#6366f1', '#10b981'],
+        borderRadius: 7,
+        borderSkipped: false
       }
     ]
   }
@@ -56,7 +51,7 @@ const chartData = computed(() => {
 
 const chartOptions = {
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false,
   plugins: {
     legend: {
       display: false
@@ -67,12 +62,12 @@ const chartOptions = {
       beginAtZero: true,
       grid: {
         color: 'rgba(0, 0, 0, 0.05)',
-        drawBorder: false
+        drawTicks: false
       },
       ticks: {
         font: {
           size: 11,
-          weight: 'bold' as const
+          weight: 'normal' as const
         }
       }
     },
@@ -84,7 +79,7 @@ const chartOptions = {
       ticks: {
         font: {
           size: 11,
-          weight: 'bold' as const
+          weight: 'normal' as const
         }
       }
     }
@@ -93,9 +88,10 @@ const chartOptions = {
 </script>
 
 <template>
-  <article class="border-[3px] border-slate-950 bg-white p-6 shadow-[6px_6px_0_#86efac]">
-    <h2 class="mb-6 text-xl font-black">{{ title }}</h2>
-    <div class="relative h-80">
+  <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">{{ title }}</h2>
+    <p class="mt-1 text-sm text-slate-500">Comparación de las estadísticas principales.</p>
+    <div class="relative mt-6 h-72">
       <Bar
         :data="chartData"
         :options="chartOptions"

@@ -19,28 +19,15 @@ const props = withDefaults(defineProps<Props>(), {
   title: 'Distribución de actividades'
 })
 
-const colors = [
-  '#0ea5e9', // sky
-  '#ec4899', // pink
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#8b5cf6', // violet
-  '#64748b'  // slate
-]
-
 const chartData = computed(() => {
-  const activePercentage = (props.stats.activeActivities / props.stats.activities * 100) || 0
-  const finishedPercentage = (props.stats.finishedActivities / props.stats.activities * 100) || 0
+  const otherActivities = Math.max(0, props.stats.activities - props.stats.activeActivities - props.stats.finishedActivities)
   
   return {
-    labels: ['Actividades activas', 'Actividades finalizadas'],
+    labels: ['Activas', 'Finalizadas', 'Otros estados'],
     datasets: [
       {
-        data: [activePercentage, finishedPercentage],
-        backgroundColor: [
-          '#0ea5e9',
-          '#64748b'
-        ],
+        data: [props.stats.activeActivities, props.stats.finishedActivities, otherActivities],
+        backgroundColor: ['#2563eb', '#64748b', '#e2e8f0'],
         borderColor: '#ffffff',
         borderWidth: 3
       }
@@ -50,7 +37,8 @@ const chartData = computed(() => {
 
 const chartOptions = {
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false,
+  cutout: '68%',
   plugins: {
     legend: {
       display: true,
@@ -67,7 +55,7 @@ const chartOptions = {
     tooltip: {
       callbacks: {
         label: function (context: any) {
-          return context.label + ': ' + context.parsed + '%'
+          return context.label + ': ' + context.parsed
         }
       }
     }
@@ -76,9 +64,10 @@ const chartOptions = {
 </script>
 
 <template>
-  <article class="border-[3px] border-slate-950 bg-white p-6 shadow-[6px_6px_0_#ec4899]">
-    <h2 class="mb-6 text-xl font-black">{{ title }}</h2>
-    <div class="relative h-80">
+  <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900">{{ title }}</h2>
+    <p class="mt-1 text-sm text-slate-500">Distribución del total de actividades.</p>
+    <div class="relative mt-6 h-72">
       <Doughnut
         :data="chartData"
         :options="chartOptions"
