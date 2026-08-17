@@ -35,6 +35,11 @@ const eventHasPassed = computed(() => event.value
   : false
 )
 
+const isCurrentUserOrganizer = computed(() => Boolean(
+  authStore.user?.id && event.value?.organizer?._id
+  && authStore.user.id === event.value.organizer._id
+))
+
 const currentFavorite = computed(() => favorites.value?.find((favorite) => {
   const favoriteEventId = typeof favorite.event === 'string'
     ? favorite.event
@@ -92,6 +97,8 @@ function handleFavoriteAction() {
 }
 
 async function registerCurrentUser() {
+  if (isCurrentUserOrganizer.value) return
+
   if (eventHasPassed.value) {
     registrationError.value = 'Esta actividad ya finalizó y no admite nuevas inscripciones.'
     return
@@ -270,21 +277,25 @@ const statusLabels: Record<string, string> = {
           >
             {{ isProcessingRegistration ? 'Cancelando...' : 'Cancelar inscripción' }}
           </button>
-          <button
+          <span
             v-else
-            type="button"
-            :disabled="isProcessingRegistration || eventHasPassed || event.status !== 'PUBLISHED' || event.availableSpots <= 0"
-            class="border-2 border-slate-950 bg-amber-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[4px_4px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            @click="registerCurrentUser"
+            :title="isCurrentUserOrganizer ? 'No puedes inscribirte en tu propio evento' : ''"
           >
-            {{ isProcessingRegistration
-              ? 'Inscribiendo...'
-              : eventHasPassed
-                ? 'Actividad finalizada'
-                : authStore.isAuthenticated
-                  ? 'Inscribirme'
-                  : 'Inicia sesión para inscribirte' }}
-          </button>
+            <button
+              type="button"
+              :disabled="isProcessingRegistration || isCurrentUserOrganizer || eventHasPassed || event.status !== 'PUBLISHED' || event.availableSpots <= 0"
+              class="border-2 border-slate-950 bg-amber-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[4px_4px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+              @click="registerCurrentUser"
+            >
+              {{ isProcessingRegistration
+                ? 'Inscribiendo...'
+                : eventHasPassed
+                  ? 'Actividad finalizada'
+                  : authStore.isAuthenticated
+                    ? 'Inscribirme'
+                    : 'Inicia sesión para inscribirte' }}
+            </button>
+          </span>
         </div>
       </section>
     </article>

@@ -65,6 +65,10 @@ function registrationFor(eventId: string) {
   })
 }
 
+function isEventOrganizer(event: EventItem) {
+  return Boolean(authStore.user?.id && authStore.user.id === event.organizer._id)
+}
+
 function favoriteFor(eventId: string) {
   return favorites.value?.find((favorite) => {
     const favoriteEventId = typeof favorite.event === 'string'
@@ -120,6 +124,8 @@ function closeFavoriteModal() {
 }
 
 function openRegistrationModal(event: EventItem) {
+  if (isEventOrganizer(event)) return
+
   selectedEvent.value = event
   modalMessage.value = ''
   modalError.value = ''
@@ -327,21 +333,26 @@ function clearFilters() {
             <NuxtLink :to="`/events/${event._id}`" class="text-xs font-black text-sky-700 hover:underline">
               Ver detalles
             </NuxtLink>
-            <button
-              type="button"
-              :disabled="hasEventPassed(event.date, event.time) || (!registrationFor(event._id) && event.availableSpots <= 0)"
-              class="ml-auto border-2 px-3 py-1.5 text-xs font-black shadow-[3px_3px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
-              :class="registrationFor(event._id)
-                ? 'border-red-700 bg-red-50 text-red-700'
-                : 'border-slate-950 bg-amber-300 text-slate-950'"
-              @click="openRegistrationModal(event)"
+            <span
+              class="ml-auto"
+              :title="isEventOrganizer(event) ? 'No puedes inscribirte en tu propio evento' : ''"
             >
-              {{ hasEventPassed(event.date, event.time)
-                ? 'Actividad finalizada'
-                : registrationFor(event._id)
-                  ? 'Cancelar inscripción'
-                  : 'Inscribirme' }}
-            </button>
+              <button
+                type="button"
+                :disabled="isEventOrganizer(event) || hasEventPassed(event.date, event.time) || (!registrationFor(event._id) && event.availableSpots <= 0)"
+                class="border-2 px-3 py-1.5 text-xs font-black shadow-[3px_3px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
+                :class="registrationFor(event._id)
+                  ? 'border-red-700 bg-red-50 text-red-700'
+                  : 'border-slate-950 bg-amber-300 text-slate-950'"
+                @click="openRegistrationModal(event)"
+              >
+                {{ hasEventPassed(event.date, event.time)
+                  ? 'Actividad finalizada'
+                  : registrationFor(event._id)
+                    ? 'Cancelar inscripción'
+                    : 'Inscribirme' }}
+              </button>
+            </span>
           </div>
         </div>
       </article>
