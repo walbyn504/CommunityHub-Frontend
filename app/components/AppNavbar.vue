@@ -24,11 +24,9 @@ const primaryLinks = computed<NavLink[]>(() => [
   ...(isOrganizerOrAdmin.value ? [{ label: 'Mis actividades', to: '/my-events' }] : [])
 ])
 
-// Páginas del enunciado que aún no están construidas: se muestran
-// deshabilitadas ("Próximamente") en vez de omitirlas o dejarlas rotas.
+// Enlaces disponibles para cualquier usuario autenticado.
 const accountLinks = computed<NavLink[]>(() => [
   { label: 'Mi perfil', to: '/profile' },
-  { label: 'Dashboard', to: '/dashboard', disabled: true },
   { label: 'Mis inscripciones', to: '/my-registrations' },
   { label: 'Favoritos', to: '/favorites' },
   { label: 'Notificaciones', to: '/notifications', badge: notificationSummary.value?.count ?? 0 }
@@ -37,10 +35,10 @@ const accountLinks = computed<NavLink[]>(() => [
 const adminLinks = computed<NavLink[]>(() =>
   authStore.isAdmin
     ? [
+        { label: 'Dashboard', to: '/dashboard' },
         { label: 'Usuarios', to: '/admin/users' },
         { label: 'Actividades (admin)', to: '/admin/events' },
-        { label: 'Categorías', to: '/admin/categories' },
-        { label: 'Estadísticas', to: '/admin/statistics', disabled: true }
+        { label: 'Categorías', to: '/admin/categories' }
       ]
     : []
 )
