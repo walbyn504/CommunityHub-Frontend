@@ -1,3 +1,6 @@
+
+/// <reference types="node" />
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -9,8 +12,17 @@ export default defineNuxtConfig({
     port: 3001
   },
 
-  // Módulos utilizados por CommunityHub
-  modules: ['@pinia/nuxt', '@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
+  // Módulos utilizados por CommunityHub.
+  // @nuxt/ui (v2) se apoya en @nuxtjs/tailwindcss (Tailwind v3), por eso va
+  // después en la lista y no reemplaza el módulo de Tailwind existente.
+  modules: ['@pinia/nuxt', '@vite-pwa/nuxt', '@nuxtjs/tailwindcss', '@nuxt/ui'],
+
+  // exposeConfig es necesario para que @nuxt/ui pueda leer los colores del
+  // tema (los importa vía el módulo virtual #tailwind-config/theme/colors).
+  // Sin esto, el build falla al no poder resolver ese import.
+  tailwindcss: {
+    exposeConfig: true
+  },
 
   // Hoja de estilos global (reset + tipografía base)
   css: ['~/assets/css/main.css'],
@@ -66,12 +78,6 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
-      // @vite-pwa/nuxt trae "navigateFallback: index.html" como valor por
-      // defecto interno; hay que sobreescribirlo EXPLÍCITAMENTE con undefined
-      // (quitar la línea no alcanza). La app es SSR: no existe un "/" estático
-      // que se pueda precachear como shell offline. La funcionalidad offline
-      // real se implementa cacheando las respuestas de la API (ver
-      // runtimeCaching abajo) cuando construyamos las páginas de actividades.
       navigateFallback: undefined,
       globPatterns: ['**/*.{js,css,png,svg,ico,json,woff2}'],
       runtimeCaching: [
@@ -96,11 +102,7 @@ export default defineNuxtConfig({
       installPrompt: true,
       periodicSyncForUpdates: 3600
     },
-    // El Service Worker de prueba en modo desarrollo (devOptions.enabled) es
-    // experimental y genera errores inestables al limpiar .nuxt. La PWA real
-    // (manifest + Service Worker + instalación) ya se verificó funcionando
-    // correctamente con `npm run build` + `npm run preview`, así que se
-    // desactiva aquí para tener un entorno de desarrollo estable.
+
     devOptions: {
       enabled: false
     }
