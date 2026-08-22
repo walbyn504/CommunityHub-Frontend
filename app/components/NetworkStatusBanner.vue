@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const isOnline = ref(true)
+let connectionCheckInterval: ReturnType<typeof setInterval> | undefined
 
 function updateNetworkStatus() {
   isOnline.value = navigator.onLine
@@ -9,11 +10,17 @@ onMounted(() => {
   updateNetworkStatus()
   window.addEventListener('online', updateNetworkStatus)
   window.addEventListener('offline', updateNetworkStatus)
+  window.addEventListener('focus', updateNetworkStatus)
+  document.addEventListener('visibilitychange', updateNetworkStatus)
+  connectionCheckInterval = window.setInterval(updateNetworkStatus, 1000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('online', updateNetworkStatus)
   window.removeEventListener('offline', updateNetworkStatus)
+  window.removeEventListener('focus', updateNetworkStatus)
+  document.removeEventListener('visibilitychange', updateNetworkStatus)
+  window.clearInterval(connectionCheckInterval)
 })
 </script>
 
