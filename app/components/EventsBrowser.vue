@@ -80,7 +80,12 @@ function rememberOrganizers(items: EventItem[]) {
   const organizerMap = new Map(organizers.value.map(organizer => [organizer._id, organizer]))
 
   for (const event of items) {
-    if (event.organizer?._id) organizerMap.set(event.organizer._id, event.organizer)
+    const isAvailablePublishedEvent = event.status === 'PUBLISHED'
+      && !hasEventPassed(event.date, event.time)
+
+    if (event.organizer?.role === 'ORGANIZER' && isAvailablePublishedEvent) {
+      organizerMap.set(event.organizer._id, event.organizer)
+    }
   }
 
   organizers.value = [...organizerMap.values()].sort((first, second) =>

@@ -20,6 +20,7 @@ export interface EventOrganizer {
   firstName: string
   lastName: string
   email: string
+  role: 'ADMIN' | 'ORGANIZER' | 'USER'
 }
 
 /**
