@@ -7,6 +7,7 @@ interface NavLink {
 }
 
 const authStore = useAuthStore()
+const route = useRoute()
 const mobileOpen = ref(false)
 const userMenuOpen = ref(false)
 
@@ -20,9 +21,9 @@ const { data: notificationSummary } = useAsyncData(
 
 // Enlaces principales, siempre sueltos en la barra (no van dentro del menú).
 const primaryLinks = computed<NavLink[]>(() => [
-  { label: 'Actividades', to: '/events' },
-  ...(isOrganizerOrAdmin.value ? [{ label: 'Mis actividades', to: '/my-events' }] : []),
-  ...(authStore.isAdmin ? [{ label: 'Administración', to: '/admin' }] : [])
+  ...(authStore.isAdmin ? [{ label: 'Administración', to: '/admin' }] : []),
+  { label: 'Actividades Publicadas', to: '/events' },
+  ...(isOrganizerOrAdmin.value ? [{ label: 'Mis actividades', to: '/my-events' }] : [])
 ])
 
 // Enlaces disponibles para cualquier usuario autenticado.
@@ -34,6 +35,14 @@ const accountLinks = computed<NavLink[]>(() => [
   { label: 'Favoritos', to: '/favorites' },
   { label: 'Notificaciones', to: '/notifications', badge: notificationSummary.value?.count ?? 0 }
 ])
+
+function isLinkActive(path: string): boolean {
+  return route.path === path || (path !== '/' && route.path.startsWith(`${path}/`))
+}
+
+const isAccountSectionActive = computed(() =>
+  accountLinks.value.some(link => isLinkActive(link.to))
+)
 
 function closeMenus() {
   mobileOpen.value = false
@@ -60,7 +69,11 @@ async function handleLogout() {
           v-for="link in primaryLinks"
           :key="link.label"
           :to="link.to"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          class="rounded-lg border-2 border-transparent px-3 py-2 text-sm font-medium transition"
+          :class="isLinkActive(link.to)
+            ? 'border-slate-950 bg-amber-300 font-black text-slate-950 shadow-[3px_3px_0_#0f172a]'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+          :aria-current="isLinkActive(link.to) ? 'page' : undefined"
         >
           {{ link.label }}
         </NuxtLink>
@@ -73,6 +86,7 @@ async function handleLogout() {
             <button
               type="button"
               class="flex items-center gap-2 border-2 border-transparent px-2 py-1.5 text-sm font-bold text-slate-700 transition hover:-rotate-1 hover:border-slate-950 hover:bg-amber-200"
+              :class="isAccountSectionActive ? 'border-slate-950 bg-amber-200 shadow-[3px_3px_0_#0f172a]' : ''"
               :aria-expanded="userMenuOpen"
               aria-haspopup="menu"
               @click="userMenuOpen = !userMenuOpen"
@@ -113,6 +127,8 @@ async function handleLogout() {
                     v-if="!link.disabled"
                     :to="link.to"
                     class="group flex items-center gap-2 border-2 border-transparent px-2 py-2 text-sm font-bold text-slate-700 transition hover:-rotate-[0.5deg] hover:border-slate-950 hover:bg-amber-200"
+                    :class="isLinkActive(link.to) ? 'border-slate-950 bg-amber-200' : ''"
+                    :aria-current="isLinkActive(link.to) ? 'page' : undefined"
                     role="menuitem"
                     @click="userMenuOpen = false"
                   >
@@ -173,7 +189,11 @@ async function handleLogout() {
           v-for="link in primaryLinks"
           :key="link.label"
           :to="link.to"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          class="rounded-lg border-2 border-transparent px-3 py-2 text-sm font-medium transition"
+          :class="isLinkActive(link.to)
+            ? 'border-slate-950 bg-amber-300 font-black text-slate-950 shadow-[3px_3px_0_#0f172a]'
+            : 'text-slate-600 hover:bg-slate-100'"
+          :aria-current="isLinkActive(link.to) ? 'page' : undefined"
           @click="closeMenus"
         >
           {{ link.label }}
@@ -187,7 +207,11 @@ async function handleLogout() {
             <NuxtLink
               v-if="!link.disabled"
               :to="link.to"
-              class="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+              class="rounded-lg border-2 border-transparent px-3 py-2 text-sm transition"
+              :class="isLinkActive(link.to)
+                ? 'border-slate-950 bg-amber-200 font-black text-slate-950'
+                : 'text-slate-600 hover:bg-slate-100'"
+              :aria-current="isLinkActive(link.to) ? 'page' : undefined"
               @click="closeMenus"
             >
               {{ link.label }}
