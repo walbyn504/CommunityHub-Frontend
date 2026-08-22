@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { EventItem } from '~/types/event'
+import type { Category, EventFilters, EventItem } from '~/types/event'
+
+const CATEGORIES_CACHE_KEY = 'communityhub:categories'
+const EVENTS_CACHE_PREFIX = 'communityhub:events:'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -17,20 +20,87 @@ const form = reactive({
 })
 
 const appliedFilters = ref({ ...form })
+const isHydrated = ref(false)
+const usingOfflineCache = ref(false)
 
-const { data: categories } = await useAsyncData('events-page-categories', () => listCategories())
+onMounted(() => {
+  isHydrated.value = true
+})
 
-const { data: events, pending, error, refresh } = await useAsyncData(
-  'events-list',
-  () => listEvents({
+function readLocalCache<T>(key: string): T | null {
+  if (!import.meta.client) return null
+
+  try {
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) as T : null
+  } catch {
+    return null
+  }
+}
+
+function writeLocalCache(key: string, value: unknown) {
+  if (!import.meta.client) return
+
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // La caché del navegador es una mejora; un fallo de almacenamiento no bloquea la consulta.
+  }
+}
+
+async function loadCategories(): Promise<Category[]> {
+  try {
+    const result = await listCategories()
+    writeLocalCache(CATEGORIES_CACHE_KEY, result)
+    return result
+  } catch (requestError) {
+    const cached = readLocalCache<Category[]>(CATEGORIES_CACHE_KEY)
+    if (!cached) throw requestError
+
+    usingOfflineCache.value = true
+    return cached
+  }
+}
+
+function getAppliedFilters(): EventFilters {
+  return {
     search: appliedFilters.value.search || undefined,
     category: appliedFilters.value.category || undefined,
     date: appliedFilters.value.date || undefined,
     location: appliedFilters.value.location || undefined,
     available: appliedFilters.value.available || undefined,
     status: 'PUBLISHED'
-  }),
-  { watch: [appliedFilters] }
+  }
+}
+
+async function loadEvents(): Promise<EventItem[]> {
+  const filters = getAppliedFilters()
+  const cacheKey = `${EVENTS_CACHE_PREFIX}${JSON.stringify(filters)}`
+  usingOfflineCache.value = false
+
+  try {
+    const result = await listEvents(filters)
+    writeLocalCache(cacheKey, result)
+    return result
+  } catch (requestError) {
+    const cached = readLocalCache<EventItem[]>(cacheKey)
+    if (!cached) throw requestError
+
+    usingOfflineCache.value = true
+    return cached
+  }
+}
+
+const { data: categories } = await useAsyncData(
+  'events-page-categories',
+  loadCategories,
+  { server: false }
+)
+
+const { data: events, pending, error, refresh } = await useAsyncData(
+  'events-list',
+  loadEvents,
+  { server: false, watch: [appliedFilters] }
 )
 
 const { data: registrations, refresh: refreshRegistrations } = await useAsyncData(
@@ -252,7 +322,15 @@ function clearFilters() {
       </div>
     </form>
 
-    <div v-if="pending" class="mt-10 text-center text-sm text-slate-500">
+    <div
+      v-if="usingOfflineCache"
+      class="mt-6 border-2 border-slate-950 bg-amber-200 px-4 py-3 text-sm font-bold text-slate-950 shadow-[3px_3px_0_#0f172a]"
+      role="status"
+    >
+      Sin conexión. Estas actividades corresponden a la última consulta guardada.
+    </div>
+
+    <div v-if="!isHydrated || pending" class="mt-10 text-center text-sm text-slate-500">
       Cargando actividades...
     </div>
 

@@ -1,10 +1,17 @@
 
 /// <reference types="node" />
 
+const apiBaseUrl = (process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api').replace(/\/$/, '')
+const escapedApiBaseUrl = apiBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const publicApiCachePattern = new RegExp(
+  `^${escapedApiBaseUrl}/(?:events(?:/[^/?#]+)?|categories)(?:\\?.*)?$`,
+  'i'
+)
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   // El backend (Express, repo aparte) corre en el puerto 3000.
   // El frontend usa el 3001 en desarrollo para no chocar con él.
@@ -43,7 +50,7 @@ export default defineNuxtConfig({
   // Nuxt sobreescribe automáticamente estos valores con las variables
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api'
+      apiBaseUrl
     }
   },
 
@@ -82,8 +89,8 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,png,svg,ico,json,woff2}'],
       runtimeCaching: [
         {
-          // Cachea respuestas de la API para consultar actividades vistas sin conexión
-          urlPattern: /^http:\/\/localhost:3000\/api\/.*/i,
+          // Solo cachea consultas públicas; excluye perfiles, sesiones y dashboards.
+          urlPattern: publicApiCachePattern,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'communityhub-api-cache',
@@ -99,7 +106,7 @@ export default defineNuxtConfig({
       ]
     },
     client: {
-      installPrompt: true,
+      installPrompt: false,
       periodicSyncForUpdates: 3600
     },
 

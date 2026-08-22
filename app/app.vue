@@ -3,6 +3,7 @@
     <NuxtRouteAnnouncer />
     <NuxtPwaManifest />
     <NuxtLoadingIndicator />
+    <NetworkStatusBanner />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

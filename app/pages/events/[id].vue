@@ -8,7 +8,8 @@ const eventId = computed(() => route.params.id as string)
 
 const { data: event, pending, error, refresh: refreshEvent } = await useAsyncData(
   `event-${route.params.id}`,
-  () => getById(eventId.value)
+  () => getById(eventId.value),
+  { server: false }
 )
 
 const { data: registrations, refresh: refreshRegistrations } = await useAsyncData(
