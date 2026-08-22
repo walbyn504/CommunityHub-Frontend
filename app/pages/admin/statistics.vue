@@ -82,11 +82,6 @@ const lastUpdated = computed(() => dashboard.value?.generatedAt
           <DashboardDoughnutChart :stats="dashboard.stats" title="Estado de las actividades" />
         </section>
 
-        <nav class="mt-6 grid gap-3 sm:grid-cols-3" aria-label="Accesos administrativos">
-          <NuxtLink to="/admin/users" class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 hover:shadow-md">Gestionar usuarios <span>→</span></NuxtLink>
-          <NuxtLink to="/admin/events" class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 hover:shadow-md">Gestionar actividades <span>→</span></NuxtLink>
-          <NuxtLink to="/admin/categories" class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 hover:shadow-md">Gestionar categorías <span>→</span></NuxtLink>
-        </nav>
       </template>
     </div>
   </main>
