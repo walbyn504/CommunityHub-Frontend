@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EventItem } from '~/types/event'
+import type { EventParticipant } from '~/types/registration'
 
 /**
  * scope 'mine' -> organizador ve y gestiona solo sus propias actividades (/my-events).
@@ -13,6 +14,7 @@ const props = defineProps<{
 const authStore = useAuthStore()
 const { list: listCategories } = useCategories()
 const { list, create, update, remove } = useEvents()
+const { listParticipants } = useRegistrations()
 
 const { data: categories } = await useAsyncData('event-manager-categories', () => listCategories())
 
@@ -41,6 +43,10 @@ const currentImageUrl = ref<string | null>(null)
 const imageError = ref('')
 const isProcessingImage = ref(false)
 const imageInputKey = ref(0)
+const participantsEvent = ref<EventItem | null>(null)
+const participants = ref<EventParticipant[]>([])
+const participantsPending = ref(false)
+const participantsError = ref('')
 
 const form = reactive({
   title: '',
@@ -269,6 +275,37 @@ async function changeStatus(event: EventItem, status: 'PUBLISHED' | 'CANCELLED')
   }
 }
 
+async function openParticipants(event: EventItem) {
+  participantsEvent.value = event
+  participants.value = []
+  participantsError.value = ''
+  participantsPending.value = true
+
+  try {
+    participants.value = await listParticipants(event._id)
+  } catch (err) {
+    participantsError.value = err instanceof ApiError
+      ? err.message
+      : 'No se pudieron cargar los participantes.'
+  } finally {
+    participantsPending.value = false
+  }
+}
+
+function closeParticipants() {
+  if (participantsPending.value) return
+  participantsEvent.value = null
+  participants.value = []
+  participantsError.value = ''
+}
+
+function formatRegistrationDate(value: string) {
+  return new Intl.DateTimeFormat('es-CR', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(new Date(value))
+}
+
 const statusLabels: Record<string, string> = {
   DRAFT: 'Borrador',
   PUBLISHED: 'Publicada',
@@ -285,7 +322,7 @@ const statusClasses: Record<string, string> = {
 </script>
 
 <template>
-  <main class="sketch-page mx-auto max-w-4xl px-4 py-10">
+  <main class="sketch-page mx-auto max-w-6xl px-4 py-10">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">
@@ -494,33 +531,61 @@ const statusClasses: Record<string, string> = {
       {{ scope === 'mine' ? 'Todavía no has creado ninguna actividad.' : 'No hay actividades creadas todavía.' }}
     </div>
 
-    <ul v-else class="mt-8 flex flex-col gap-3">
+    <ul v-else class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
       <li
         v-for="event in events"
         :key="event._id"
-        class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+        class="flex min-h-72 flex-col border-2 border-slate-950 bg-white p-4 shadow-[5px_5px_0_#bae6fd]"
       >
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-semibold text-slate-900">{{ event.title }}</h3>
-            <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="statusClasses[event.status]">
-              {{ statusLabels[event.status] ?? event.status }}
-            </span>
-          </div>
-          <p class="mt-1 text-xs text-slate-500">
-            {{ event.category.name }} · {{ formatEventDate(event.date) }} · {{ event.time }}
-            · {{ event.availableSpots }}/{{ event.maxCapacity }} cupos
-            <template v-if="scope === 'all'">
-              · Organizador: {{ event.organizer.firstName }} {{ event.organizer.lastName }}
-            </template>
+        <div class="flex items-start justify-between gap-3 border-b-2 border-dashed border-slate-200 pb-3">
+          <h3 class="font-black leading-5 text-slate-950">{{ event.title }}</h3>
+          <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="statusClasses[event.status]">
+            {{ statusLabels[event.status] ?? event.status }}
+          </span>
+        </div>
+
+        <div class="grid flex-1 grid-cols-1 gap-2 py-3 text-xs text-slate-600 sm:grid-cols-2">
+          <p class="flex items-center gap-2">
+            <UIcon name="i-lucide-tag" class="size-4 shrink-0 text-sky-600" />
+            <span class="truncate">{{ event.category.name }}</span>
+          </p>
+          <p class="flex items-center gap-2">
+            <UIcon name="i-lucide-calendar" class="size-4 shrink-0 text-sky-600" />
+            <span>{{ formatEventDate(event.date) }}</span>
+          </p>
+          <p class="flex items-center gap-2">
+            <UIcon name="i-lucide-clock" class="size-4 shrink-0 text-sky-600" />
+            <span>{{ event.time }}</span>
+          </p>
+          <p class="flex items-center gap-2">
+            <UIcon name="i-lucide-users" class="size-4 shrink-0 text-sky-600" />
+            <span>{{ event.confirmedCount }} inscritos</span>
+          </p>
+          <p class="flex items-center gap-2 sm:col-span-2">
+            <UIcon name="i-lucide-gauge" class="size-4 shrink-0 text-sky-600" />
+            <span>{{ event.availableSpots }} de {{ event.maxCapacity }} cupos disponibles</span>
+          </p>
+          <p v-if="scope === 'all'" class="flex items-center gap-2 sm:col-span-2">
+            <UIcon name="i-lucide-user-round" class="size-4 shrink-0 text-sky-600" />
+            <span class="truncate">{{ event.organizer.firstName }} {{ event.organizer.lastName }}</span>
           </p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2 border-t-2 border-dashed border-slate-200 pt-4">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+            :aria-label="`Ver participantes de ${event.title}: ${event.confirmedCount}`"
+            title="Ver participantes"
+            @click="openParticipants(event)"
+          >
+            <UIcon name="i-lucide-users" class="size-4" />
+            {{ event.confirmedCount }}
+          </button>
           <button
             v-if="event.status === 'DRAFT'"
             type="button"
-            class="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+            class="rounded-lg border border-emerald-300 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
             @click="changeStatus(event, 'PUBLISHED')"
           >
             Publicar
@@ -528,21 +593,21 @@ const statusClasses: Record<string, string> = {
           <button
             v-if="event.status === 'PUBLISHED'"
             type="button"
-            class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+            class="rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
             @click="changeStatus(event, 'CANCELLED')"
           >
             Cancelar
           </button>
           <button
             type="button"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            class="ml-auto rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             @click="openEditForm(event)"
           >
             Editar
           </button>
           <button
             type="button"
-            class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+            class="rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
             @click="openDeleteModal(event)"
           >
             Eliminar
@@ -550,6 +615,75 @@ const statusClasses: Record<string, string> = {
         </div>
       </li>
     </ul>
+
+    <Teleport to="body">
+      <div
+        v-if="participantsEvent"
+        class="sketch-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="participants-title"
+        @click.self="closeParticipants"
+      >
+        <div class="sketch-modal-card max-h-[85vh] max-w-2xl overflow-y-auto">
+          <div class="flex items-start justify-between gap-4 border-b-2 border-dashed border-slate-300 pb-4">
+            <div>
+              <h2 id="participants-title" class="text-xl font-black text-slate-950">Participantes</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ participantsEvent.title }}</p>
+            </div>
+            <button
+              type="button"
+              class="flex size-9 shrink-0 items-center justify-center border-2 border-slate-950 bg-white hover:bg-amber-200 disabled:opacity-50"
+              aria-label="Cerrar participantes"
+              :disabled="participantsPending"
+              @click="closeParticipants"
+            >
+              <UIcon name="i-lucide-x" class="size-5" />
+            </button>
+          </div>
+
+          <div v-if="participantsPending" class="py-10 text-center text-sm text-slate-500">
+            Cargando participantes...
+          </div>
+          <div v-else-if="participantsError" class="sketch-form-error mt-4" role="alert">
+            {{ participantsError }}
+          </div>
+          <div v-else-if="participants.length === 0" class="py-10 text-center text-sm text-slate-500">
+            Esta actividad todavia no tiene participantes inscritos.
+          </div>
+          <ul v-else class="mt-4 divide-y divide-dashed divide-slate-300">
+            <li
+              v-for="participant in participants"
+              :key="participant._id"
+              class="flex items-center gap-3 py-3"
+            >
+              <img
+                v-if="participant.user.profileImage"
+                :src="participant.user.profileImage"
+                :alt="`${participant.user.firstName} ${participant.user.lastName}`"
+                class="size-10 shrink-0 rounded-full border-2 border-slate-950 object-cover"
+              >
+              <div
+                v-else
+                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-slate-950 bg-sky-100 text-sm font-black text-slate-900"
+                aria-hidden="true"
+              >
+                {{ participant.user.firstName.charAt(0) }}{{ participant.user.lastName.charAt(0) }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-slate-900">
+                  {{ participant.user.firstName }} {{ participant.user.lastName }}
+                </p>
+                <p class="truncate text-xs text-slate-500">{{ participant.user.email }}</p>
+              </div>
+              <p class="shrink-0 text-right text-xs text-slate-500">
+                {{ formatRegistrationDate(participant.createdAt) }}
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </Teleport>
 
     <ConfirmActionModal
       :open="!!eventToDelete"

@@ -24,3 +24,18 @@ export interface RegistrationItem {
   createdAt: string
   updatedAt: string
 }
+
+export interface ParticipantUser {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  profileImage: string | null
+}
+
+export interface EventParticipant {
+  _id: string
+  user: ParticipantUser
+  status: 'CONFIRMED'
+  createdAt: string
+}

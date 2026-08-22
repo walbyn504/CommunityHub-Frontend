@@ -1,4 +1,4 @@
-import type { RegistrationItem, RegistrationStatus } from '~/types/registration'
+import type { EventParticipant, RegistrationItem, RegistrationStatus } from '~/types/registration'
 
 export function useRegistrations() {
   const api = useApi()
@@ -20,5 +20,10 @@ export function useRegistrations() {
     })
   }
 
-  return { register, cancel, listMine }
+  /** GET /api/events/:id/participants - requiere ser propietario o ADMIN. */
+  function listParticipants(eventId: string) {
+    return api<EventParticipant[]>(`/events/${eventId}/participants`)
+  }
+
+  return { register, cancel, listMine, listParticipants }
 }
