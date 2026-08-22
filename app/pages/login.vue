@@ -47,7 +47,9 @@ async function handleSubmit() {
   isSubmitting.value = true
   try {
     await authStore.login({ email: form.email.trim(), password: form.password })
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    const redirect = authStore.isAdmin
+      ? '/admin'
+      : typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     await navigateTo(redirect)
   } catch (error) {
     serverError.value = error instanceof ApiError
