@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, EventFilters, EventItem } from '~/types/event'
+import type { Category, EventFilters, EventItem, EventOrganizer } from '~/types/event'
 
 const CATEGORIES_CACHE_KEY = 'communityhub:categories'
 const EVENTS_CACHE_PREFIX = 'communityhub:events:'
@@ -16,10 +16,12 @@ const form = reactive({
   category: '',
   date: '',
   location: '',
+  organizer: '',
   available: false
 })
 
 const appliedFilters = ref({ ...form })
+const organizers = ref<EventOrganizer[]>([])
 const isHydrated = ref(false)
 const usingOfflineCache = ref(false)
 
@@ -68,9 +70,25 @@ function getAppliedFilters(): EventFilters {
     category: appliedFilters.value.category || undefined,
     date: appliedFilters.value.date || undefined,
     location: appliedFilters.value.location || undefined,
+    organizer: appliedFilters.value.organizer || undefined,
     available: appliedFilters.value.available || undefined,
     status: 'PUBLISHED'
   }
+}
+
+function rememberOrganizers(items: EventItem[]) {
+  const organizerMap = new Map(organizers.value.map(organizer => [organizer._id, organizer]))
+
+  for (const event of items) {
+    if (event.organizer?._id) organizerMap.set(event.organizer._id, event.organizer)
+  }
+
+  organizers.value = [...organizerMap.values()].sort((first, second) =>
+    `${first.firstName} ${first.lastName}`.localeCompare(
+      `${second.firstName} ${second.lastName}`,
+      'es'
+    )
+  )
 }
 
 async function loadEvents(): Promise<EventItem[]> {
@@ -80,12 +98,14 @@ async function loadEvents(): Promise<EventItem[]> {
 
   try {
     const result = await listEvents(filters)
+    rememberOrganizers(result)
     writeLocalCache(cacheKey, result)
     return result
   } catch (requestError) {
     const cached = readLocalCache<EventItem[]>(cacheKey)
     if (!cached) throw requestError
 
+    rememberOrganizers(cached)
     usingOfflineCache.value = true
     return cached
   }
@@ -250,6 +270,7 @@ function clearFilters() {
   form.category = ''
   form.date = ''
   form.location = ''
+  form.organizer = ''
   form.available = false
   applyFilters()
 }
@@ -270,7 +291,7 @@ function clearFilters() {
     <div v-if="favoriteError" class="sketch-form-error mt-5" role="alert">{{ favoriteError }}</div>
 
     <form
-      class="mt-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-5"
+      class="mt-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-6"
       @submit.prevent="applyFilters"
     >
       <input
@@ -300,12 +321,19 @@ function clearFilters() {
         class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
       >
 
+      <select v-model="form.organizer" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <option value="">Organizador</option>
+        <option v-for="organizer in organizers" :key="organizer._id" :value="organizer._id">
+          {{ organizer.firstName }} {{ organizer.lastName }}
+        </option>
+      </select>
+
       <label class="flex items-center gap-2 text-sm text-slate-700">
         <input v-model="form.available" type="checkbox" class="rounded border-slate-300">
         Solo con cupo disponible
       </label>
 
-      <div class="flex gap-2 lg:col-span-4 lg:justify-end">
+      <div class="flex gap-2 lg:col-span-5 lg:justify-end">
         <button
           type="button"
           class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
