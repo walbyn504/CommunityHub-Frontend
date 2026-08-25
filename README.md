@@ -21,6 +21,16 @@ y puede instalarse como Progressive Web App (PWA).
 Nuxt 4, Vue 3, TypeScript, Pinia, Tailwind CSS, Nuxt UI, Chart.js,
 vue-chartjs, Vite PWA y Workbox.
 
+
+## Repositorios del proyecto
+
+CommunityHub-Frontend es uno de los tres repositorios del proyecto:
+
+- Backend: https://github.com/walbyn504/CommunityHub-Backend.git
+- Fronted: (este repositorio)
+- Lambda: https://github.com/walbyn504/CommunityHub-Lambda-Notifications.git
+
+
 ## Inicio rápido
 
 Requiere Node.js 22, npm y el backend de CommunityHub disponible.
