@@ -1,13 +1,7 @@
-/**
- * Roles soportados por CommunityHub.
- * Deben coincidir exactamente con el enum "role" del modelo User en el backend.
- */
+/** Roles admitidos por el backend. */
 export type UserRole = 'ADMIN' | 'ORGANIZER' | 'USER'
 
-/**
- * Representa al usuario autenticado tal como lo devuelve la API
- * (GET /api/auth/me). Coincide exactamente con el authController real.
- */
+/** Usuario autenticado devuelto por la API. */
 export interface AuthUser {
   id: string
   firstName: string
@@ -32,10 +26,7 @@ export interface RegisterData {
   profileImage?: string | null
 }
 
-/**
- * Respuesta real de POST /api/auth/login: el usuario más el token JWT,
- * todo en el mismo nivel (sin envoltorio { success, data }).
- */
+/** Usuario y token devueltos al iniciar sesión. */
 export interface LoginResponse extends AuthUser {
   token: string
 }

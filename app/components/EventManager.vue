@@ -2,11 +2,7 @@
 import type { EventItem } from '~/types/event'
 import type { EventParticipant } from '~/types/registration'
 
-/**
- * scope 'mine' -> organizador ve y gestiona solo sus propias actividades (/my-events).
- * scope 'all'  -> admin ve y gestiona las actividades de TODOS los organizadores (/admin/events).
- * El backend ya permite ambos casos (esDueno || esAdmin en updateEvent/deleteEvent).
- */
+/** Define si se gestionan actividades propias o todas las actividades. */
 const props = defineProps<{
   scope: 'mine' | 'all'
 }>()
@@ -352,7 +348,7 @@ const statusClasses: Record<string, string> = {
       {{ successMessage }}
     </div>
 
-    <!-- Formulario de crear/editar, en modal para no empujar la lista -->
+    <!-- Formulario de actividad -->
     <Teleport to="body">
       <div
         v-if="showForm"

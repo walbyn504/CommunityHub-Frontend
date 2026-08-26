@@ -37,8 +37,7 @@ function validate(): boolean {
 }
 
 async function handleSubmit() {
-  // Evita envíos duplicados si el usuario hace doble clic o presiona
-  // Enter varias veces antes de que se deshabilite el botón visualmente.
+  // Evita envíos duplicados.
   if (isSubmitting.value) return
 
   serverError.value = ''

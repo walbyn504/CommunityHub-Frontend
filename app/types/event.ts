@@ -23,10 +23,7 @@ export interface EventOrganizer {
   role: 'ADMIN' | 'ORGANIZER' | 'USER'
 }
 
-/**
- * Actividad tal como la devuelve la API. Nota: el backend usa "_id" (Mongo),
- * no "id" como en los endpoints de auth.
- */
+/** Actividad devuelta por la API con identificador de MongoDB. */
 export interface EventItem {
   _id: string
   title: string

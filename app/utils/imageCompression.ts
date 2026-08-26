@@ -15,10 +15,7 @@ function loadBrowserImage(file: File): Promise<HTMLImageElement> {
   })
 }
 
-/**
- * Redimensiona y comprime una imagen para enviarla como Base64 sin superar
- * el límite del cuerpo JSON del backend.
- */
+/** Comprime una imagen en Base64 para enviarla a la API. */
 export async function compressImageFile(file: File): Promise<string> {
   const image = await loadBrowserImage(file)
   const maxDimension = 900

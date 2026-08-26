@@ -1,9 +1,4 @@
-/**
- * Middleware de invitado: protege páginas que solo tienen sentido sin sesión
- * iniciada (login, register). Si el usuario ya está autenticado, lo redirige
- * al inicio en vez de dejarlo ver el formulario de login otra vez.
- * Uso: definePageMeta({ middleware: 'guest' })
- */
+/** Redirige al inicio si ya existe una sesión. */
 export default defineNuxtRouteMiddleware(async () => {
   const auth = useAuthStore()
 

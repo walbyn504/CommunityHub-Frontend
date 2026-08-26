@@ -24,14 +24,7 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    /**
-     * Inicia sesión contra POST /api/auth/login.
-     * El backend responde { token, id, firstName, lastName, email, role } en
-     * un solo nivel (sin envoltorio). Guardamos el token en la cookie (para
-     * que sobreviva a un refresh) y usamos ESE MISMO token directamente para
-     * la llamada a /auth/me que sigue, en vez de releerlo de la cookie
-     * (evita una condición de carrera con la sincronización de la cookie).
-     */
+    /** Inicia sesión y carga el perfil con el token recibido. */
     async login(credentials: LoginCredentials) {
       const token = useAuthToken()
       this.isLoading = true
@@ -48,11 +41,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Registra un nuevo usuario contra POST /api/auth/register.
-     * El backend crea la cuenta sin iniciar sesión. La página de registro
-     * redirige al login para que el usuario confirme sus credenciales.
-     */
+    /** Registra una cuenta sin iniciar sesión. */
     async register(newUser: RegisterData) {
       this.isLoading = true
       try {
@@ -65,12 +54,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Consulta GET /api/auth/me (requiere el header Authorization) para saber
-     * si el token guardado sigue siendo válido y traer el perfil completo.
-     * Se usa al cargar la app, en el middleware de rutas protegidas, y justo
-     * después de login() (con el token recién recibido, ver arriba).
-     */
+    /** Valida el token y carga el perfil actual. */
     async fetchMe(tokenOverride?: string) {
       const token = useAuthToken()
       const activeToken = tokenOverride ?? token.value
@@ -91,11 +75,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Cierra sesión contra POST /api/auth/logout. Como el JWT es sin estado
-     * (el backend no lo invalida), lo importante es borrar el token guardado
-     * localmente; la llamada al backend es solo por completitud del contrato.
-     */
+    /** Cierra la sesión y elimina el token local. */
     async logout() {
       const token = useAuthToken()
       try {

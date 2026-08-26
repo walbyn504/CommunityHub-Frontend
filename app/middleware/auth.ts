@@ -1,7 +1,4 @@
-/**
- * Middleware de autenticación: protege páginas que requieren sesión iniciada.
- * Uso: definePageMeta({ middleware: 'auth' })
- */
+/** Protege rutas que requieren una sesión activa. */
 export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuthStore()
 

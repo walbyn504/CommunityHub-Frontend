@@ -3,12 +3,7 @@ export function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-/**
- * Espejo exacto de validatePassword() en authController.js del backend:
- * mínimo 8 caracteres, con minúscula, mayúscula, número y carácter especial
- * (@$!%*?&.#_-). Debe coincidir siempre con el backend para que el frontend
- * nunca acepte algo que el backend vaya a rechazar después.
- */
+/** Replica la validación de contraseña del backend. */
 export function isValidPassword(value: string): boolean {
   const hasLower = /[a-z]/.test(value)
   const hasUpper = /[A-Z]/.test(value)

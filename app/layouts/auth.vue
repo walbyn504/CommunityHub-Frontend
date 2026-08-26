@@ -1,8 +1,4 @@
-<!--
-  Layout sin navbar/footer para login y register: esas páginas ya tienen su
-  propio diseño de pantalla completa centrado, y el navbar quedaría raro
-  encima de eso (además, no tiene sentido "salir" del formulario sin loguearse).
--->
+<!-- Layout exclusivo para autenticación. -->
 <template>
   <div class="sketch-app sketch-auth-shell">
     <div aria-hidden="true" class="absolute left-[8%] top-[12%] h-20 w-20 rotate-12 rounded-full border-[3px] border-dashed border-sky-400" />
