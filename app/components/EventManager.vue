@@ -531,8 +531,18 @@ const statusClasses: Record<string, string> = {
       <li
         v-for="event in events"
         :key="event._id"
-        class="flex min-h-72 flex-col border-2 border-slate-950 bg-white p-4 shadow-[5px_5px_0_#bae6fd]"
+        class="flex min-h-72 flex-col overflow-hidden border-2 border-slate-950 bg-white p-4 shadow-[5px_5px_0_#bae6fd]"
       >
+        <div class="-mx-4 -mt-4 mb-4 flex h-40 items-center justify-center border-b-2 border-slate-950 bg-slate-100">
+          <img
+            v-if="event.image"
+            :src="event.image"
+            :alt="event.title"
+            class="h-full w-full object-cover"
+          >
+          <span v-else class="text-sm font-semibold text-slate-400">Sin imagen</span>
+        </div>
+
         <div class="flex items-start justify-between gap-3 border-b-2 border-dashed border-slate-200 pb-3">
           <h3 class="font-black leading-5 text-slate-950">{{ event.title }}</h3>
           <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="statusClasses[event.status]">
